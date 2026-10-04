@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E7ECFA">
+<title>SVJ</title>
+<meta name="application-name" content="SVJ">
+<meta name="apple-mobile-web-app-title" content="SVJ">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E7ECFA; --surface:#FFFFFF; --sunk:#EEF1FB; --ink:#1D1B2E; --muted:#55536B; --line:#E1E5F2; --line2:#D2D8EB;
+  --accent:#9BE3B0; --on-accent:#1D1B2E; --shrank:#F2A391; --down:#B23E26; --down-soft:rgba(226,104,77,.16);
+  --brass:#9A6510; --brass-soft:rgba(232,178,58,.22); --on-ink:#FFFFFF; --card-edge:transparent;
+  --radius-lg:26px; --radius:18px; --radius-sm:14px;
+  --font:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
+    --shrank:#B9614F; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+    --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
+  --shrank:#B9614F; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+  --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;border-radius:10px}
+.wrap{max-width:560px;margin:0 auto;padding:10px 14px 112px}
+.view{display:none} .view.on{display:block}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 6px 14px}
+.topbar h1{font-size:1.32rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.back-wrap{display:flex;align-items:center;gap:10px}
+.sync{font-size:.78rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:1px}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.sync.ok i{background:#2E9E5B} .sync.local i{background:#E8B23A}
+
+.card{background:var(--surface);border-radius:var(--radius-lg);padding:16px;margin:0 0 12px}
+.card h2,.section-h h2{font-size:1.06rem;margin:0;font-weight:800;letter-spacing:-.01em}
+.card .sub{font-size:.86rem;color:var(--muted);margin:4px 0 12px}
+.rowhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.hero{padding:18px}
+.hero .label{color:var(--muted);font-size:.9rem;font-weight:600;margin:0}
+.big{font-size:clamp(2.5rem,12vw,3.1rem);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:2px 0 0}
+.big small{font-size:.5em;color:var(--muted);letter-spacing:-.01em}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pill{display:inline-block;background:var(--sunk);color:var(--ink);font-weight:700;font-size:.88rem;padding:7px 12px;border-radius:999px}
+.pill.acc{background:var(--accent);color:var(--on-accent)}
+.pill.neg{background:var(--down-soft);color:var(--down)}
+.up{color:var(--ink)!important} .dn{color:var(--down)!important}
+
+.seg{display:inline-flex;background:var(--sunk);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 11px;border-radius:999px;font-size:.82rem;font-weight:700;color:var(--muted);min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 -16px 8px;padding:0 16px 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border:1.5px solid var(--line2);background:transparent;border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:700;color:var(--muted);min-height:36px}
+.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--on-accent)}
+.chartbox{position:relative;margin:0 -4px}
+.chartbox svg{display:block;width:100%;height:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.readout{font-size:.88rem;color:var(--muted);min-height:1.4em;margin:2px 0 6px}
+.readout b{color:var(--ink)}
+.axis{font-size:11px;fill:var(--muted);font-family:var(--font);font-weight:600}
+.legend{display:flex;gap:14px;font-size:.8rem;font-weight:600;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.small{font-size:.8rem;margin:8px 0 0}
+
+/* Wallet */
+.section-h{display:flex;justify-content:space-between;align-items:baseline;padding:8px 6px 10px}
+.section-h span{font-size:.84rem;font-weight:600;color:var(--muted)}
+.wallet{position:relative;margin-bottom:12px}
+.wcard{all:unset;box-sizing:border-box;position:absolute;left:0;right:0;height:150px;border-radius:22px;padding:16px 18px;cursor:pointer;box-shadow:0 -3px 14px rgba(29,27,46,.13),inset 0 0 0 1px var(--card-edge);display:flex;flex-direction:column;justify-content:flex-start;text-align:left}
+.wcard:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+@media (hover:hover){.wcard{transition:transform .15s}.wcard:hover{transform:translateY(-4px)}}
+.wrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wn{font-weight:700;font-size:1.02rem}
+.wv{font-weight:800;font-size:1.08rem}
+.ws{font-size:.8rem;font-weight:600;opacity:.88;margin-top:3px}
+.bigcard{border-radius:24px;padding:18px;min-height:170px;display:flex;flex-direction:column;justify-content:space-between;margin-bottom:12px;box-shadow:inset 0 0 0 1px var(--card-edge)}
+.bc-v{display:block;font-size:2.4rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.bc-pill{display:inline-block;margin-top:8px;background:rgba(255,255,255,.2);font-size:.84rem;font-weight:700;padding:5px 10px;border-radius:999px}
+.card.list{padding:4px 18px}
+.acct-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.acct-row:first-child{border-top:0}
+.acct-row b{display:block;font-size:1rem}
+.acct-row small{display:block;font-size:.78rem;font-weight:600;color:var(--muted)}
+.acct-row .r{text-align:right}
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stale{color:var(--brass)!important}
+
+/* Forms */
+.grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
+.grp i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.field{display:grid;grid-template-columns:1fr 46%;align-items:center;gap:10px;padding:7px 0}
+.field .n{font-weight:700}
+.field .hint{font-size:.78rem;color:var(--muted);font-weight:600;display:block}
+.money{display:flex;align-items:center;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:0 12px;min-height:48px}
+.money:focus-within{border-color:var(--ink);background:var(--surface)}
+.money span{color:var(--muted);font-weight:700;margin-right:6px;font-size:.92rem}
+.money input::placeholder{font-weight:600;font-size:.92rem;color:var(--muted);opacity:.75}
+.money input{border:0;background:transparent;width:100%;min-width:0;font-size:1.05rem;font-weight:700;text-align:right;padding:10px 0;outline:none}
+.inp,select.inp{width:100%;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:10px 12px;min-height:48px;font-size:1rem}
+.inp:focus{border-color:var(--ink);outline:none;background:var(--surface)}
+label.lbl{display:block;font-size:.86rem;color:var(--muted);font-weight:700;margin:12px 0 6px}
+.conv{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right;grid-column:2;margin-top:-4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;padding:13px 20px;font-weight:800;font-size:1rem;min-height:52px;background:var(--ink);color:var(--on-ink)}
+.btn.small{padding:0 18px;min-height:44px;font-size:.92rem;border-radius:999px}
+.btn.full{width:100%}
+.btn.ghost,.btn.light{background:var(--surface);color:var(--ink)}
+.card .btn.ghost{background:var(--sunk)}
+.btn.danger{background:var(--down-soft);color:var(--down)}
+.btn:disabled{opacity:.45;cursor:default}
+.linkbtn{border:0;background:none;color:var(--ink);font-weight:700;padding:10px 0;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent);text-decoration-thickness:2px}
+.actions{display:flex;gap:10px;margin-top:16px}
+.actions .btn{flex:1}
+.drop{display:block;border:2px dashed var(--line2);border-radius:20px;padding:22px 16px;text-align:center;background:var(--sunk);cursor:pointer;position:relative}
+.drop .ic{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--on-accent);margin-bottom:8px}
+.drop .ic svg{width:22px;height:22px}
+.drop b{display:block;font-size:1.02rem;font-weight:800}
+.drop span.t{font-size:.82rem;font-weight:600;color:var(--muted)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.drop:focus-within{border-color:var(--ink)}
+.note{font-size:.86rem;color:var(--muted);background:var(--sunk);border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0}
+.note.warn{background:var(--brass-soft);color:var(--ink)}
+.note.err{background:var(--down-soft);color:var(--ink)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:.94rem}
+.kv:first-child{border-top:0}
+.kv span{color:var(--muted);font-weight:600} .kv b{text-align:right}
+.tbl-wrap{overflow-x:auto;margin:8px -16px 0;padding:0 16px}
+table{border-collapse:collapse;font-size:.84rem;width:100%}
+td,th{padding:7px 8px 7px 0;border-top:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{color:var(--muted);font-weight:600;border-top:0}
+td.num,th.num{text-align:right}
+td.desc{white-space:normal;min-width:130px}
+.badge{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.badge.pdf{background:var(--brass-soft);color:var(--brass)} .badge.csv{background:var(--accent);color:var(--on-accent)}
+.hist-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.hist-row:first-child{border-top:0}
+.hist-row .d{font-weight:700;font-size:.94rem}
+.hist-row .d small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
+.iconbtn{border:0;background:var(--sunk);border-radius:50%;width:40px;height:40px;display:grid;place-items:center;color:var(--muted);flex:none}
+.iconbtn.round{width:44px;height:44px;background:var(--surface);color:var(--ink)}
+.iconbtn svg{width:18px;height:18px}
+.empty{text-align:center;padding:30px 12px 18px}
+.empty h2{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 6px}
+.empty p{color:var(--muted);margin:0 0 18px}
+.bank-ed{padding:14px 0 4px;border-top:1px solid var(--line)}
+.bank-ed:first-child{border-top:0;padding-top:0}
+.bank-ed-h{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.dot{width:14px;height:14px;border-radius:5px}
+.inp.strong{font-weight:800}
+.acct-ed{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin:8px 0 0 22px}
+.swatches{display:flex;gap:8px;margin:10px 0 0 22px;flex-wrap:wrap}
+.swatches button{width:30px;height:30px;border-radius:9px;border:0;box-shadow:inset 0 0 0 1px var(--card-edge)}
+.swatches button[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+.bank-ed .linkbtn{margin-left:22px}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;box-shadow:0 -4px 20px rgba(29,27,46,.08)}
+nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs button{border:0;background:none;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;font-weight:700;color:var(--muted);min-height:62px}
+nav.tabs button span.ic{display:grid;place-items:center;width:52px;height:30px;border-radius:999px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button[aria-current="page"]{color:var(--ink)}
+nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(--on-accent)}
+.sheet-bg{position:fixed;inset:0;background:rgba(18,17,36,.45);z-index:40;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92%;overflow:auto;background:var(--surface);border-radius:28px 28px 0 0;z-index:41;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));display:none;max-width:600px;margin:0 auto}
+.sheet.on,.sheet-bg.on{display:block}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line2);margin:4px auto 12px}
+.sheet h2{font-size:1.25rem;margin:0 0 4px;letter-spacing:-.01em;font-weight:800}
+@media (prefers-reduced-motion:no-preference){
+  .sheet.on{animation:up .22s cubic-bezier(.2,.8,.2,1)}
+  @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+}
+@media (prefers-reduced-motion:reduce){.wcard{transition:none!important}}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:700;z-index:60;display:none;max-width:90%;text-align:center}
+.toast.on{display:block}
+.muted{color:var(--muted)}
+.page-h{padding:8px 6px 14px}
+.page-h h1{font-size:1.32rem;font-weight:800;margin:0;letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- OVERVIEW -->
+  <section class="view on" id="v-overview" aria-label="Overview"></section>
+
+  <!-- UPDATE -->
+  <section class="view" id="v-update" aria-label="Update balances">
+    <div class="page-h"><h1>Update</h1></div>
+    <div class="card">
+      <h2>Import a statement</h2>
+      <p class="sub">CSV or PDF from your banking app. Balances and transactions are read on this phone.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".csv,.pdf,text/csv,application/pdf,text/comma-separated-values">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span>
+        <b>Choose a file</b>
+        <span class="t">Chase, Monzo and most other banks</span>
+      </label>
+    </div>
+    <div class="card">
+      <h2>Type in balances</h2>
+      <p class="sub">Fill in the accounts you've checked. Leave the rest blank.</p>
+      <label class="lbl" for="m-date">Balance date</label>
+      <input class="inp" type="date" id="m-date">
+      <div id="m-fields" style="margin-top:8px"></div>
+      <button class="btn full" id="m-save" style="margin-top:14px">Save balances</button>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="v-history" aria-label="History">
+    <div class="page-h"><h1>History</h1></div>
+    <div class="card">
+      <div class="rowhead">
+        <div><h2>Balance history</h2><p class="sub" style="margin:0">Every balance saved, newest first</p></div>
+      </div>
+      <select class="inp" id="h-acct" aria-label="Account"></select>
+      <div id="h-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Imports</h2>
+      <p class="sub">Undo an import to remove the balances and transactions it added.</p>
+      <div id="h-imports"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="v-settings" aria-label="Settings">
+    <div class="page-h"><h1>Settings</h1></div>
+    <div class="card" id="s-demo" hidden>
+      <h2>Demo data is loaded</h2>
+      <p class="sub">Six months of made-up history for testing. Remove it before you start adding your real balances. Banks and accounts stay as they are.</p>
+      <button class="btn danger small" id="s-demo-rm">Remove demo data</button>
+    </div>
+    <div class="card">
+      <h2>Banks and accounts</h2>
+      <p class="sub">Each bank holds one or more accounts. Rename them to match yours.</p>
+      <div id="s-accts"></div>
+      <button class="btn ghost small" id="s-add" style="margin-top:12px">Add a bank</button>
+    </div>
+    <div class="card">
+      <h2>Danish kroner</h2>
+      <p class="sub">Used to convert DKK balances into pounds. Each balance keeps the rate from the day you saved it.</p>
+      <div class="field" style="border:0;padding-top:0">
+        <span class="n">1 DKK in pounds</span>
+        <div class="money"><span>£</span><input id="s-rate" inputmode="decimal" aria-label="Pounds per Danish krone"></div>
+      </div>
+      <p class="muted" style="font-size:.82rem;margin:4px 0 0" id="s-rate-meta"></p>
+    </div>
+    <div class="card">
+      <h2>Your data</h2>
+      <p class="sub" id="s-store"></p>
+      <div class="actions" style="flex-wrap:wrap">
+        <button class="btn ghost small" id="s-export">Download a backup</button>
+        <label class="btn ghost small" style="cursor:pointer">Restore a backup<input type="file" id="s-restore-file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+        <button class="btn danger small" id="s-wipe">Delete everything</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Sections"><div class="in">
+  <button data-tab="overview" aria-current="page"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></span>Overview</button>
+  <button data-tab="update"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>Update</button>
+  <button data-tab="history"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>History</button>
+  <button data-tab="settings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</button>
+</div></nav>
+
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="grab"></div><div id="sheet-body"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+<script>
+const Core = (() => {
+  const MONTHS = {jan:1,january:1,januar:1,feb:2,february:2,februar:2,mar:3,march:3,marts:3,apr:4,april:4,may:5,maj:5,jun:6,june:6,juni:6,jul:7,july:7,juli:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,okt:10,october:10,oktober:10,nov:11,november:11,dec:12,december:12};
+  const pad = n => String(n).padStart(2, '0');
+
+  function parseNum(s) {
+    if (s == null) return NaN;
+    let t = String(s).trim();
+    if (!t) return NaN;
+    let neg = false;
+    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+    t = t.replace(/\s|\u00a0|£|\$|€|kr\.?|DKK|GBP/gi, '');
+    if (t.endsWith('-')) { neg = !neg; t = t.slice(0, -1); }
+    if (t.startsWith('+')) t = t.slice(1);
+    if (t.startsWith('-') || t.startsWith('\u2212')) { neg = !neg; t = t.slice(1); }
+    if (t.startsWith('£')) t = t.slice(1);
+    const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+    const nc = (t.match(/,/g) || []).length, nd = (t.match(/\./g) || []).length;
+    if (lc > -1 && ld > -1) {
+      t = lc > ld ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+    } else if (lc > -1) {
+      t = (nc === 1 && t.length - lc - 1 !== 3) ? t.replace(',', '.') : t.replace(/,/g, '');
+    } else if (ld > -1) {
+      if (nd > 1 || t.length - ld - 1 === 3) t = t.replace(/\./g, '');
+    }
+    if (!/^\d*\.?\d+$/.test(t)) return NaN;
+    const v = parseFloat(t);
+    return neg ? -v : v;
+  }
+
+  function validDate(y, m, d) {
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1990 || y > 2100) return null;
+    return `${y}-${pad(m)}-${pad(d)}`;
+  }
+
+  function parseDate(s) {
+    if (s == null) return null;
+    const t = String(s).trim();
+    let m;
+    if ((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return validDate(+m[1], +m[2], +m[3]);
+    if ((m = t.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/))) return validDate(+m[3], +m[2], +m[1]);
+    if ((m = t.match(/^(\d{1,2})\.?\s+([A-Za-zæøåÆØÅ]+)\.?,?\s+(\d{4})/))) {
+      const mo = MONTHS[m[2].toLowerCase()];
+      return mo ? validDate(+m[3], mo, +m[1]) : null;
+    }
+    if ((m = t.match(/^(\d{1,2})[\-\s]([A-Za-z]{3})[\-\s](\d{2,4})/))) {
+      const mo = MONTHS[m[2].toLowerCase()];
+      return mo ? validDate(+m[3], mo, +m[1]) : null;
+    }
+    return null;
+  }
+
+  function detectDelimiter(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
+    let best = ',', bestScore = -1;
+    for (const d of [',', ';', '\t', '|']) {
+      const counts = lines.map(l => {
+        let n = 0, q = false;
+        for (const ch of l) { if (ch === '"') q = !q; else if (ch === d && !q) n++; }
+        return n;
+      });
+      const max = Math.max(...counts);
+      const consistent = counts.filter(c => c === max).length;
+      const score = max > 0 ? consistent * 100 + max : 0;
+      if (score > bestScore) { bestScore = score; best = d; }
+    }
+    return best;
+  }
+
+  function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, '');
+    const d = detectDelimiter(text);
+    const rows = [];
+    let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === d) { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); cell = '';
+        if (row.some(c => c.trim() !== '')) rows.push(row.map(c => c.trim()));
+        row = [];
+      } else cell += ch;
+    }
+    row.push(cell);
+    if (row.some(c => c.trim() !== '')) rows.push(row.map(c => c.trim()));
+    return rows;
+  }
+
+  const HEADER_WORDS = /^(date|dato|time|tid|amount|beløb|balance|saldo|description|tekst|type|name|category|money in|money out|paid in|paid out|transaction|reference|details|currency|valuta|bogført|rentedato|posted)/i;
+
+  function findHeaderRow(rows) {
+    let best = 0, bestScore = -1;
+    for (let i = 0; i < Math.min(rows.length, 12); i++) {
+      const score = rows[i].filter(c => HEADER_WORDS.test(c) || /date|dato|balance|saldo|amount|beløb/i.test(c)).length;
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return bestScore >= 2 ? best : -1;
+  }
+
+  function guessColumns(header, data) {
+    const find = (re, exclude) => header.findIndex(h => re.test(h) && !(exclude && exclude.test(h)));
+    const map = {
+      date: find(/^(transaction )?date$|^dato$|^bogført|^posted|^date\b|dato/i),
+      time: find(/^time$|^tid$/i),
+      amount: find(/^amount$|^beløb|^amount\b|^value$/i, /local/i),
+      balance: find(/balance|saldo/i),
+      desc: find(/^name$|^(transaction )?description$|^tekst$|^narrative|^details|^payee|description|tekst/i),
+      desc2: -1,
+      category: find(/^category$|^kategori/i),
+      moneyIn: find(/money in|paid in|credit|indbetal|ind$/i),
+      moneyOut: find(/money out|paid out|debit|udbetal|ud$/i),
+    };
+    const d2 = find(/^description$/i);
+    if (d2 > -1 && d2 !== map.desc) map.desc2 = d2;
+    if (map.date < 0) {
+      for (let c = 0; c < header.length; c++) {
+        const ok = data.slice(0, 10).filter(r => parseDate(r[c])).length;
+        if (ok >= Math.min(3, data.length)) { map.date = c; break; }
+      }
+    }
+    return map;
+  }
+
+  function hashStr(s) {
+    let h1 = 0x811c9dc5, h2 = 0x1b873593;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 16777619);
+      h2 = Math.imul(h2 ^ c, 2246822507);
+    }
+    return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+  }
+
+  // Put transactions in chronological order and give each a stable id.
+  function finalizeTxns(txns) {
+    if (!txns.length) return txns;
+    const descending = txns[0].date > txns[txns.length - 1].date;
+    txns.forEach((t, i) => { t.ord = descending ? -i : i; });
+    txns.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || '') < (b.time || '') ? -1 : (a.time || '') > (b.time || '') ? 1 : a.ord - b.ord);
+    const seen = {};
+    txns.forEach(t => {
+      const key = [t.date, t.time || '', t.amount.toFixed(2), t.desc || '', isFinite(t.balance) ? t.balance.toFixed(2) : ''].join('|');
+      seen[key] = (seen[key] || 0) + 1;
+      t.id = hashStr(key + '#' + seen[key]);
+      delete t.ord;
+    });
+    return txns;
+  }
+
+  function buildTxns(data, map) {
+    const out = [];
+    for (const r of data) {
+      const date = parseDate(r[map.date]);
+      if (!date) continue;
+      let amount = map.amount > -1 ? parseNum(r[map.amount]) : NaN;
+      if (!isFinite(amount) && (map.moneyIn > -1 || map.moneyOut > -1)) {
+        const i = map.moneyIn > -1 ? parseNum(r[map.moneyIn]) : NaN;
+        const o = map.moneyOut > -1 ? parseNum(r[map.moneyOut]) : NaN;
+        if (isFinite(i) || isFinite(o)) amount = (isFinite(i) ? Math.abs(i) : 0) - (isFinite(o) ? Math.abs(o) : 0);
+      }
+      const balance = map.balance > -1 ? parseNum(r[map.balance]) : NaN;
+      if (!isFinite(amount) && !isFinite(balance)) continue;
+      let desc = map.desc > -1 ? r[map.desc] : '';
+      if (!desc && map.desc2 > -1) desc = r[map.desc2];
+      out.push({
+        date,
+        time: map.time > -1 ? (r[map.time] || '').slice(0, 8) : '',
+        amount: isFinite(amount) ? Math.round(amount * 100) / 100 : 0,
+        balance: isFinite(balance) ? balance : NaN,
+        desc: (desc || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+        category: map.category > -1 ? (r[map.category] || '') : '',
+      });
+    }
+    return finalizeTxns(out);
+  }
+
+  // Fill in running balances backwards from a known closing balance.
+  function applyAnchor(txns, closing) {
+    let run = closing;
+    for (let i = txns.length - 1; i >= 0; i--) {
+      txns[i].balance = Math.round(run * 100) / 100;
+      run -= txns[i].amount;
+    }
+    return txns;
+  }
+
+  function dailyClosing(txns) {
+    const days = {};
+    for (const t of txns) if (isFinite(t.balance)) days[t.date] = t.balance;
+    return days;
+  }
+
+  function analyzeCSV(text, filename) {
+    const rows = parseCSV(text);
+    const hi = findHeaderRow(rows);
+    const header = hi > -1 ? rows[hi] : rows[0].map((_, i) => 'Column ' + (i + 1));
+    const data = rows.slice(hi > -1 ? hi + 1 : 0);
+    const map = guessColumns(header, data);
+    const title = hi > 0 ? rows.slice(0, hi).map(r => r.join(' ')).join(' ') : '';
+    let bank = '';
+    if (/monzo/i.test(filename) || (header.includes('Transaction ID') && header.includes('Emoji'))) bank = 'monzo';
+    else if (/transactions for period/i.test(title) || /chase/i.test(filename)) bank = 'chase';
+    else if (/danske|nordea|jyske|nykredit|lunar|sydbank|spar nord|arbejdernes/i.test(filename) || header.some(h => /saldo|beløb|dato/i.test(h))) bank = 'danish';
+    return { kind: 'csv', header, data, map, title, bank };
+  }
+
+  // ---- PDF statements ----
+  // pages: [[{x, y, str}]] with y increasing upwards (pdf.js coordinates)
+  function pdfRows(items) {
+    const sorted = items.filter(i => i.str && i.str.trim()).sort((a, b) => b.y - a.y || a.x - b.x);
+    const rows = [];
+    for (const it of sorted) {
+      let row = rows.find(r => Math.abs(r.y - it.y) <= 2.5);
+      if (!row) { row = { y: it.y, items: [] }; rows.push(row); }
+      row.items.push(it);
+    }
+    rows.forEach(r => {
+      r.items.sort((a, b) => a.x - b.x);
+      r.x = r.items[0].x;
+      r.text = r.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').replace(/(\d) (\.\d\d)\b/g, '$1$2').trim();
+    });
+    rows.sort((a, b) => b.y - a.y);
+    return rows;
+  }
+
+  const NUM_TOKEN = /^[\-+−]?£?\(?-?[\d.,]+\)?(CR|DR)?$/i;
+
+  function analyzePDF(pages, filename) {
+    const pageRows = pages.map(pdfRows);
+    const all = pageRows.flat();
+    const fullText = all.map(r => r.text).join('\n');
+    const res = { kind: 'pdf', bank: '', period: null, closing: NaN, pots: 0, txns: [] };
+    if (/monzo/i.test(fullText) || /monzo/i.test(filename)) res.bank = 'monzo';
+    else if (/chase/i.test(fullText)) res.bank = 'chase';
+
+    const per = fullText.match(/(\d{1,2}[\/.]\d{1,2}[\/.]\d{4})\s*[-–to]+\s*(\d{1,2}[\/.]\d{1,2}[\/.]\d{4})/);
+    if (per) res.period = { from: parseDate(per[1]), to: parseDate(per[2]) };
+
+    const valueNear = (label) => {
+      for (const rows of pageRows) {
+        const i = rows.findIndex(r => label.test(r.text));
+        if (i < 0) continue;
+        const lab = rows[i];
+        const cands = rows.filter(r => r !== lab && r.y > lab.y && r.y - lab.y < 40 && /£|[\d],?\d*\.\d\d/.test(r.text))
+          .sort((a, b) => (a.y - lab.y) - (b.y - lab.y));
+        for (const c of cands) {
+          const m = c.text.match(/[\-+]?£\s?-?[\d,]+\.\d\d|-?[\d,]+\.\d\d/);
+          if (m) { const v = parseNum(m[0]); if (isFinite(v)) return v; }
+        }
+      }
+      return NaN;
+    };
+    const main = valueNear(/^Personal Account balance|^Account balance|^Closing balance|^Balance carried forward/i);
+    const pots = valueNear(/^Balance in Pots/i);
+    if (isFinite(pots)) res.pots = pots;
+
+    // Transaction lines: a date first, then text, ending in amount + balance.
+    const txns = [];
+    pageRows.forEach((rows, p) => {
+      const head = rows.find(r => /\bDate\b/i.test(r.text) && /Balance/i.test(r.text));
+      const descX = head ? (head.items.find(i => /Description|Details|Payment type/i.test(i.str)) || {}).x : undefined;
+      const amtX = head ? (head.items.find(i => /Amount|Paid out|Money out/i.test(i.str)) || {}).x : undefined;
+      const txRows = [];
+      rows.forEach(r => {
+        if (head && r.y >= head.y) return;
+        const first = r.items[0];
+        const date = parseDate(first.str) || parseDate(r.text);
+        if (!date || first.x > (descX ? descX - 5 : 140)) return;
+        const tokens = r.items.map(i => i.str.trim()).filter(Boolean);
+        const nums = [];
+        for (let k = tokens.length - 1; k > 0 && nums.length < 2; k--) {
+          if (NUM_TOKEN.test(tokens[k].replace(/\s/g, ''))) nums.unshift(tokens[k]); else break;
+        }
+        if (nums.length < 2) return;
+        const dateTok = tokens[0];
+        const descParts = r.items.filter(i => i !== first && !nums.includes(i.str.trim())).map(i => i.str.trim());
+        const descText = descParts.join(' ').replace(dateTok, '').trim();
+        txRows.push({ row: r, date, amount: parseNum(nums[0]), balance: parseNum(nums[1]), desc: [descText].filter(Boolean) });
+      });
+      // Multi-line descriptions sit just above/below their transaction line.
+      rows.forEach(r => {
+        if (txRows.some(t => t.row === r) || (head && r.y >= head.y)) return;
+        const lo = descX !== undefined ? descX - 6 : 120, hi = amtX !== undefined ? amtX : 400;
+        if (r.x < lo || r.x > hi) return;
+        let best = null, bd = 18;
+        txRows.forEach(t => { const d = Math.abs(t.row.y - r.y); if (d < bd) { bd = d; best = t; } });
+        if (best) best.desc.push({ y: r.y, t: r.text });
+      });
+      txRows.forEach(t => {
+        const lines = t.desc.map(d => typeof d === 'string' ? { y: t.row.y, t: d } : d).sort((a, b) => b.y - a.y);
+        txns.push({ date: t.date, time: '', amount: t.amount, balance: t.balance, desc: lines.map(l => l.t).join(' ').replace(/\s+/g, ' ').trim().slice(0, 140), category: '' });
+      });
+    });
+    res.txns = finalizeTxns(txns.filter(t => isFinite(t.amount) && isFinite(t.balance)));
+    const lastTx = res.txns[res.txns.length - 1];
+    res.closing = isFinite(main) ? main : (lastTx ? lastTx.balance : NaN);
+    if (!res.period && res.txns.length) res.period = { from: res.txns[0].date, to: lastTx.date };
+    return res;
+  }
+
+  return { parseNum, parseDate, parseCSV, analyzeCSV, buildTxns, applyAnchor, dailyClosing, analyzePDF, hashStr };
+})();
+if (typeof module !== 'undefined') module.exports = Core;
+</script><script>
+(() => {
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => isoLocal(new Date());
+const toUTC = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const fromUTC = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+const addDays = (s, n) => fromUTC(toUTC(s) + n * 864e5);
+const dayDiff = (a, b) => Math.round((toUTC(b) - toUTC(a)) / 864e5);
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtDate = (s, withYear) => { const [y, m, d] = s.split('-').map(Number); return `${d} ${MON[m - 1]}${withYear ? ' ' + y : ''}`; };
+const dowShort = s => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(toUTC(s)).getUTCDay()];
+const GBP = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+const GBP0 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
+const DKK = new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' });
+const money = (v, cur = 'GBP') => cur === 'DKK' ? DKK.format(v) : GBP.format(v);
+const signed = (v, whole) => (v > 0 ? '+' : v < 0 ? '−' : '') + (whole ? GBP0 : GBP).format(Math.abs(v));
+const compact = (v, span = Infinity) => { const a = Math.abs(v); const s = v < 0 ? '−' : ''; return a >= 1e6 ? `${s}£${(a / 1e6).toFixed(1)}m` : a >= 1e4 ? `${s}£${span < 6000 ? (a / 1e3).toFixed(1) : Math.round(a / 1e3)}k` : a >= 1e3 ? `${s}£${(a / 1e3).toFixed(1)}k` : `${s}£${Math.round(a)}`; };
+const rid = () => Math.random().toString(36).slice(2, 9);
+
+const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
+const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
+const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
+const DEFAULT_BANKS = [
+  { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
+  { id: 'b-monzo', name: 'Monzo', color: '#1D1B2E' },
+  { id: 'b-uk3', name: 'UK bank 3', color: '#E8B23A' },
+  { id: 'b-dk', name: 'Danish bank', color: '#D9534F' },
+  { id: 'b-t212', name: 'Trading 212', color: '#3B3FB6' },
+];
+const DEFAULT_ACCOUNTS = [
+  { id: 'chase', bank: 'b-chase', name: 'Current account', cur: 'GBP', kind: 'bank' },
+  { id: 'chase-saver', bank: 'b-chase', name: 'Regular Saver', cur: 'GBP', kind: 'bank' },
+  { id: 'monzo', bank: 'b-monzo', name: 'Current account', cur: 'GBP', kind: 'bank' },
+  { id: 'uk3', bank: 'b-uk3', name: 'Account', cur: 'GBP', kind: 'bank' },
+  { id: 'dk', bank: 'b-dk', name: 'Account', cur: 'DKK', kind: 'bank' },
+  { id: 'isa', bank: 'b-t212', name: 'Stocks & Shares ISA', cur: 'GBP', kind: 'investment' },
+];
+const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', imports: [] }, bal: {}, tx: {} });
+// v1 had a flat list of accounts: give each one a bank, keeping account ids so history stays attached.
+const NAMED_COLORS = { chase: '#0F7C6E', monzo: '#1D1B2E', 'uk bank 3': '#E8B23A', 'danish bank': '#D9534F', 'trading 212': '#3B3FB6' };
+function giveColors(m) {
+  let changed = false;
+  m.banks.forEach((b, i) => { if (!b.color) { b.color = NAMED_COLORS[b.name.toLowerCase()] || PALETTE[i % PALETTE.length]; changed = true; } });
+  return changed;
+}
+function migrate(st) {
+  const m = st.meta;
+  if (m.banks && m.accounts.every(a => a.bank)) { if (giveColors(m)) st._dirty = true; return st; }
+  m.banks = m.banks || [];
+  const known = { chase: ['Chase', 'Current account'], monzo: ['Monzo', 'Current account'], uk3: ['UK bank 3', 'Account'], dk: ['Danish bank', 'Account'], isa: ['Trading 212', 'Stocks & Shares ISA'] };
+  m.accounts.forEach(a => {
+    if (a.bank) return;
+    const [bankName, acctName] = known[a.id] && (a.name === DEFAULT_ACCOUNTS_V1[a.id] || a.id === 'isa') ? known[a.id] : [a.name, 'Account'];
+    let b = m.banks.find(x => x.name === bankName);
+    if (!b) { b = { id: 'b-' + rid(), name: bankName }; m.banks.push(b); }
+    a.bank = b.id; a.name = acctName;
+  });
+  m.v = 2;
+  giveColors(m); st._dirty = true;
+  return st;
+}
+const DEFAULT_ACCOUNTS_V1 = { chase: 'Chase', monzo: 'Monzo', uk3: 'UK account 3', dk: 'Danish account', isa: 'Stocks & Shares ISA' };
+let S = fresh();
+
+// ---------- storage ----------
+const CACHE = 'savings-tracker-cache-v1';
+const Store = {
+  mode: 'boot', db: null, uid: null, queues: {}, failed: false,
+  col() { return this.db.collection('data/users/' + this.uid); },
+  cache() { try { localStorage.setItem(CACHE, JSON.stringify({ uid: this.uid, S })); } catch (e) {} },
+  readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE) || 'null'); return c && c.S ? c : null; } catch (e) { return null; } },
+  async connect() {
+    try {
+      if (!window.claude || !window.claude.use) throw new Error('no runtime');
+      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      if (db && user) { const id = await user.id(); if (id) { this.db = db; this.uid = id; this.mode = 'cloud'; return true; } }
+    } catch (e) {}
+    this.mode = 'local';
+    return false;
+  },
+  async loadCloud() {
+    const snap = await this.col().get();
+    const docs = {};
+    snap.docs.forEach(d => { if (d.exists) docs[d.id] = d.data(); });
+    return docs;
+  },
+  run(id, fn) {
+    this.cache();
+    if (this.mode !== 'cloud') return Promise.resolve();
+    const q = (this.queues[id] || Promise.resolve()).then(fn).catch(async e => {
+      if (e && e.code === 'unavailable') { await new Promise(r => setTimeout(r, 600 + Math.random() * 900)); return fn(); }
+      throw e;
+    }).catch(e => {
+      this.failed = true; setSync();
+      toast(e && e.code === 'quota_exceeded' ? 'Storage is full. Delete old data in History.' : 'Couldn’t save to your account. Kept on this phone for now.');
+    });
+    this.queues[id] = q;
+    return q;
+  },
+  put(id, data) { const body = JSON.parse(JSON.stringify(data)); return this.run(id, () => this.col().doc(id).set(body)); },
+  del(id) { return this.run(id, () => this.col().doc(id).delete()); },
+};
+const docsFrom = st => {
+  const docs = { meta: st.meta };
+  for (const a in st.bal) docs['bal-' + a] = { entries: st.bal[a] };
+  for (const k in st.tx) docs['tx-' + k] = { items: st.tx[k] };
+  return docs;
+};
+const stateFrom = docs => {
+  const st = { meta: clone(docs.meta), bal: {}, tx: {} };
+  for (const id in docs) {
+    if (id.startsWith('bal-')) st.bal[id.slice(4)] = docs[id].entries || {};
+    else if (id.startsWith('tx-')) st.tx[id.slice(3)] = docs[id].items || {};
+  }
+  return migrate(st);
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const saveMeta = () => { delete S._dirty; return Store.put('meta', S.meta); };
+const saveBal = a => Store.put('bal-' + a, { entries: S.bal[a] || {} });
+const saveTx = k => Object.keys(S.tx[k] || {}).length ? Store.put('tx-' + k, { items: S.tx[k] }) : Store.del('tx-' + k);
+
+function setSync() {
+  const el = $('#sync');
+  if (!el) { const st0 = $('#s-store'); if (st0) st0.textContent = Store.mode === 'cloud' ? 'Saved privately to your Claude account, so it’s the same on any device you open this on. Anyone you share this page with can’t see it.' : 'Saved on this phone only. Download a backup now and then, and before you clear Chrome’s data or change phones.'; return; }
+  el.className = 'sync ' + (Store.mode === 'cloud' && !Store.failed ? 'ok' : Store.mode === 'boot' ? '' : 'local');
+  $('span', el).textContent = Store.mode === 'boot' ? 'Loading' : Store.mode === 'cloud' ? (Store.failed ? 'Sync problem' : 'Synced') : 'This phone only';
+  const st = $('#s-store');
+  if (st) st.textContent = Store.mode === 'cloud'
+    ? 'Saved privately to your Claude account, so it’s the same on any device you open this on. Anyone you share this page with can’t see it.'
+    : 'Saved on this phone only. Download a backup now and then, and before you clear Chrome’s data or change phones.';
+}
+
+// ---------- model helpers ----------
+const banks = () => S.meta.banks;
+const bankById = id => banks().find(b => b.id === id);
+const accountsIn = bid => S.meta.accounts.filter(a => a.bank === bid);
+// accounts in bank order, so lists read Chase, Chase, Monzo, ...
+const accounts = () => banks().flatMap(b => accountsIn(b.id));
+const acctById = id => S.meta.accounts.find(a => a.id === id);
+const fullName = a => { const b = a && bankById(a.bank); return a ? (b ? `${b.name} ${a.name}` : a.name) : 'Removed account'; };
+const acctOptions = (sel) => banks().map(b => { const as = accountsIn(b.id); return as.length ? `<optgroup label="${esc(b.name)}">${as.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}${a.cur !== 'GBP' ? ` (${a.cur})` : ''}</option>`).join('')}</optgroup>` : ''; }).join('');
+const entries = id => Object.entries(S.bal[id] || {}).sort((a, b) => a[0] < b[0] ? -1 : 1);
+const toGBP = (acct, e) => acct.cur === 'GBP' ? e.b : e.b * (e.fx || S.meta.dkkRate);
+const latest = id => { const es = entries(id); return es.length ? es[es.length - 1] : null; };
+const hasAny = () => accounts().some(a => entries(a.id).length);
+
+function netSeries(filter) {
+  const accs = accounts().filter(a => !filter || filter(a)).map(a => ({ a, es: entries(a.id), i: 0, cur: null }));
+  let start = null;
+  accs.forEach(x => { if (x.es.length && (!start || x.es[0][0] < start)) start = x.es[0][0]; });
+  if (!start) return [];
+  let end = today();
+  accs.forEach(x => { const l = x.es[x.es.length - 1]; if (l && l[0] > end) end = l[0]; });
+  const out = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    let total = 0;
+    const per = {};
+    accs.forEach(x => {
+      while (x.i < x.es.length && x.es[x.i][0] <= d) { x.cur = x.es[x.i][1]; x.i++; }
+      if (x.cur) { const v = toGBP(x.a, x.cur); per[x.a.id] = v; total += v; }
+    });
+    out.push({ date: d, v: Math.round(total * 100) / 100, per });
+  }
+  return out;
+}
+const pointOn = (series, d) => { if (!series.length || d < series[0].date) return null; return series[Math.min(series.length - 1, dayDiff(series[0].date, d))]; };
+const valueOn = (series, d) => { const p = pointOn(series, d); return p ? p.v : null; };
+// Change between two dates, counting only accounts that already had a balance at the start,
+// so adding a new account doesn't show up as money saved.
+const changeBetween = (series, d0, d1) => { const a = pointOn(series, d0), b = pointOn(series, d1); if (!a || !b) return null; let c = 0; for (const k in a.per) c += (b.per[k] ?? 0) - a.per[k]; return Math.round(c * 100) / 100; };
+
+// ---------- UI basics ----------
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2800); }
+function openSheet(html) { $('#sheet-body').innerHTML = html; $('#sheet').classList.add('on'); $('#sheet-bg').classList.add('on'); $('#sheet').scrollTop = 0; }
+function closeSheet() { $('#sheet').classList.remove('on'); $('#sheet-bg').classList.remove('on'); $('#sheet-body').innerHTML = ''; }
+$('#sheet-bg').addEventListener('click', closeSheet);
+
+let tab = 'overview';
+function go(t) {
+  ui.bank = null;
+  tab = t;
+  $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + t));
+  $$('nav.tabs button').forEach(b => b.dataset.tab === t ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  render();
+  window.scrollTo(0, 0);
+}
+$$('nav.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+
+// two-tap confirm for destructive buttons
+function confirmTap(btn, label, fn) {
+  if (btn.dataset.armed) { fn(); return; }
+  const old = btn.innerHTML;
+  btn.dataset.armed = '1'; btn.innerHTML = label; btn.classList.add('armed');
+  if (btn.classList.contains('iconbtn')) { btn.style.width = 'auto'; btn.style.borderRadius = '999px'; btn.style.padding = '0 12px'; btn.style.background = 'var(--down-soft)'; btn.style.color = 'var(--down)'; btn.style.fontWeight = '700'; btn.style.fontSize = '.82rem'; }
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.innerHTML = old; btn.removeAttribute('style'); } }, 3000);
+}
+
+// ---------- charts ----------
+function lineChart(box, pts, readout, color) {
+  const stroke = color || 'var(--ink)', area = color || 'var(--accent)', areaOp = color ? .18 : .5;
+  const W = Math.max(280, Math.round(box.clientWidth || 340)), H = 200, T = 14, B = 24;
+  if (pts.length === 1) pts = [{ ...pts[0], date: addDays(pts[0].date, -1) }, pts[0]];
+  let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
+  if (hi - lo < 1) { hi += 50; lo -= 50; }
+  const span = hi - lo; lo -= span * .08; hi += span * .1;
+  const x = i => 6 + (i / (pts.length - 1)) * (W - 12);
+  const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
+  const grid = [0, .5, 1].map(f => { const v = lo + (hi - lo) * (.12 + f * .76); return `<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="2 4"/><text class="axis" x="2" y="${y(v) - 5}">${compact(v, hi - lo)}</text>`; }).join('');
+  const xl = [0, Math.floor((pts.length - 1) / 2), pts.length - 1].map((i, k) => `<text class="axis" x="${x(i)}" y="${H - 6}" text-anchor="${['start', 'middle', 'end'][k]}">${fmtDate(pts[i].date)}</text>`).join('');
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net worth over time">${grid}
+    <path d="${line}L${x(pts.length - 1)},${H - B}L${x(0)},${H - B}Z" fill="${area}" fill-opacity="${areaOp}"/>
+    <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${xl}<g class="cur" style="display:none"><line y1="${T - 4}" y2="${H - B}" stroke="var(--ink)" stroke-opacity=".35"/><circle r="5.5" fill="var(--surface)" stroke="${stroke}" stroke-width="2.5"/></g>
+    <circle cx="${x(pts.length - 1)}" cy="${y(pts[pts.length - 1].v)}" r="5" fill="${stroke}"/></svg>`;
+  const svg = $('svg', box), cur = $('.cur', svg);
+  const show = i => {
+    const p = pts[i]; cur.style.display = '';
+    $('line', cur).setAttribute('x1', x(i)); $('line', cur).setAttribute('x2', x(i));
+    $('circle', cur).setAttribute('cx', x(i)); $('circle', cur).setAttribute('cy', y(p.v));
+    readout.innerHTML = `${dowShort(p.date)} ${fmtDate(p.date, true)}: <b>${GBP.format(p.v)}</b>`;
+  };
+  const reset = () => { cur.style.display = 'none'; readout.innerHTML = readout.dataset.def; };
+  readout.dataset.def = readout.innerHTML;
+  const at = e => { const r = svg.getBoundingClientRect(); const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); show(Math.round(f * (pts.length - 1))); };
+  svg.addEventListener('pointerdown', at); svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) at(e); });
+  svg.addEventListener('pointerleave', reset); svg.addEventListener('pointercancel', reset);
+  svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
+}
+
+function barChart(box, bars, readout) {
+  const W = Math.max(280, Math.round(box.clientWidth || 340)), H = 170, T = 10, B = 22;
+  const vals = bars.map(b => b.v || 0);
+  let hi = Math.max(0, ...vals), lo = Math.min(0, ...vals);
+  if (hi - lo < 1) hi = 1;
+  const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const bw = W / bars.length, gap = Math.max(3, bw * .28);
+  const rects = bars.map((b, i) => {
+    if (b.v == null) return `<rect x="${i * bw + gap / 2}" y="${y(0) - 1}" width="${bw - gap}" height="2" fill="var(--line)"/>`;
+    const y0 = y(Math.max(0, b.v)), h = Math.max(2, Math.abs(y(b.v) - y(0)));
+    return `<rect data-i="${i}" x="${i * bw + gap / 2}" y="${y0}" width="${bw - gap}" height="${h}" rx="5" fill="${b.v >= 0 ? 'var(--ink)' : 'var(--shrank)'}"/>`;
+  }).join('');
+  const labs = bars.map((b, i) => (i % 2 === (bars.length - 1) % 2) ? `<text class="axis" x="${i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${b.short}</text>` : '').join('');
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Change per period"><line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/>${rects}${labs}<rect class="hl" fill="var(--ink)" fill-opacity=".06" style="display:none"/></svg>`;
+  const svg = $('svg', box), hl = $('.hl', svg);
+  readout.dataset.def = readout.innerHTML;
+  const show = e => {
+    const r = svg.getBoundingClientRect(); const i = Math.min(bars.length - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * bars.length)));
+    const b = bars[i];
+    hl.style.display = ''; hl.setAttribute('x', i * bw); hl.setAttribute('y', 0); hl.setAttribute('width', bw); hl.setAttribute('height', H - B + 4);
+    readout.innerHTML = `${esc(b.label)}: <b class="${b.v > 0 ? 'up' : b.v < 0 ? 'dn' : ''}">${b.v == null ? 'no data yet' : signed(b.v)}</b>`;
+  };
+  const reset = () => { hl.style.display = 'none'; readout.innerHTML = readout.dataset.def; };
+  svg.addEventListener('pointerdown', show); svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) show(e); });
+  svg.addEventListener('pointerleave', reset);
+  svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
+}
+
+function periodBars(series, mode) {
+  const t = today(), bars = [];
+  if (mode === 'week') {
+    const dow = (new Date(toUTC(t)).getUTCDay() + 6) % 7; // Mon=0
+    let wkStart = addDays(t, -dow);
+    for (let k = 11; k >= 0; k--) {
+      const s = addDays(wkStart, -7 * k), e = addDays(s, 6) > t ? t : addDays(s, 6);
+      bars.push({ v: changeBetween(series, addDays(s, -1), e), short: fmtDate(s).split(' ')[0], label: `Week from ${fmtDate(s)}` });
+    }
+  } else {
+    const [y, m] = t.split('-').map(Number);
+    for (let k = 11; k >= 0; k--) {
+      let mm = m - k, yy = y; while (mm < 1) { mm += 12; yy--; }
+      const s = `${yy}-${pad(mm)}-01`;
+      const nextS = mm === 12 ? `${yy + 1}-01-01` : `${yy}-${pad(mm + 1)}-01`;
+      const e = addDays(nextS, -1) > t ? t : addDays(nextS, -1);
+      bars.push({ v: changeBetween(series, addDays(s, -1), e), short: MON[mm - 1][0], label: `${MON[mm - 1]} ${yy}` });
+    }
+  }
+  return bars;
+}
+
+// ---------- OVERVIEW ----------
+const ui = { range: '3M', period: 'week', scope: 'all', bank: null, bankRange: '3M' };
+const RANGES = { '1M': 30, '3M': 91, '1Y': 365, 'All': 1e9 };
+const segHTML = (attr, opts, on, labels) => `<div class="seg" role="group">${opts.map((o, i) => `<button data-${attr}="${o}" aria-pressed="${o === on}">${labels ? labels[i] : o}</button>`).join('')}</div>`;
+const pill = (v, lbl, strong) => v == null ? '' : `<span class="pill ${v < 0 ? 'neg' : strong ? 'acc' : ''}">${signed(v)} ${lbl}</span>`;
+const ageText = d => { const age = dayDiff(d, today()); return age <= 0 ? 'Updated today' : age === 1 ? 'Updated yesterday' : `Updated ${age} days ago`; };
+function bankTotals() {
+  return banks().map(b => {
+    const as = accountsIn(b.id);
+    let sum = 0, any = false, native = null;
+    as.forEach(a => { const l = latest(a.id); if (l) { any = true; sum += toGBP(a, l[1]); if (as.length === 1 && a.cur !== 'GBP') native = money(l[1].b, a.cur); } });
+    return { b, as, sum, any, native };
+  });
+}
+function renderOverview() {
+  const el = $('#v-overview');
+  if (ui.bank && bankById(ui.bank)) return renderBank(el);
+  ui.bank = null;
+  if (!hasAny()) {
+    el.innerHTML = `${headerHTML()}<div class="card empty"><h2>No balances yet</h2><p>Import a statement or type in today’s balances to start your history.</p>
+      <div class="actions" style="justify-content:center"><button class="btn" data-go="update">Add balances</button></div></div>`;
+    wireHeader(el); $('[data-go]', el).onclick = () => go('update');
+    return;
+  }
+  const series = netSeries();
+  const last = series[series.length - 1], t = last.date;
+  const w = changeBetween(series, addDays(t, -7), t), m = changeBetween(series, addDays(t, -30), t);
+  const whole = Math.trunc(last.v), pence = Math.abs(last.v - whole).toFixed(2).slice(1);
+  const totals = bankTotals();
+  const withData = totals.filter(x => x.any);
+  if (ui.scope !== 'all' && !withData.some(x => x.b.id === ui.scope)) ui.scope = 'all';
+  const scoped = ui.scope === 'all' ? series : netSeries(a => a.bank === ui.scope);
+  const scopeName = ui.scope === 'all' ? 'All banks' : bankById(ui.scope).name;
+  const pts = scoped.slice(-Math.min(scoped.length, RANGES[ui.range] + 1));
+  const sLast = scoped[scoped.length - 1];
+  const total = last.v || 1;
+
+  // wallet stack: biggest first, empty banks last
+  const order = totals.filter(x => x.as.length).sort((a, b) => (b.any - a.any) || (b.sum - a.sum));
+  const STEP = 68, CARD = 150;
+  const cards = order.map((x, i) => {
+    const share = x.any ? Math.max(0, x.sum / total * 100) : 0;
+    return `<button class="wcard" data-bank="${x.b.id}" style="top:${i * STEP}px;background:${x.b.color};color:${cardInk(x.b.color)};z-index:${i + 1}" aria-label="Open ${esc(x.b.name)}">
+      <span class="wrow"><span class="wn">${esc(x.b.name)}</span><span class="wv">${x.any ? GBP.format(x.sum) : '—'}</span></span>
+      <span class="wrow ws"><span>${x.native || `${x.as.length} account${x.as.length === 1 ? '' : 's'}`}</span><span>${x.any ? share.toFixed(0) + '% of total' : 'No balance yet'}</span></span>
+    </button>`;
+  }).join('');
+
+  el.innerHTML = `${headerHTML()}
+    <div class="card hero">
+      <p class="label">You’ve got, across ${withData.length} bank${withData.length === 1 ? '' : 's'}</p>
+      <p class="big">${last.v < 0 ? '−' : ''}${GBP0.format(Math.abs(whole))}<small>${pence}</small></p>
+      <div class="pills">${pill(w, 'this week', true) || '<span class="pill">No change yet this week</span>'}${pill(m, 'in 30 days')}</div>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2>Over time</h2>${segHTML('range', Object.keys(RANGES), ui.range)}</div>
+      ${withData.length > 1 ? `<div class="chips" role="group" aria-label="Show">${[{ id: 'all', name: 'All banks' }, ...withData.map(x => x.b)].map(b => `<button data-scope="${b.id}" aria-pressed="${ui.scope === b.id}">${esc(b.name)}</button>`).join('')}</div>` : ''}
+      <div class="readout" id="o-read">${esc(scopeName)}: <b>${GBP.format(sLast.v)}</b> on ${fmtDate(sLast.date)}</div>
+      <div class="chartbox" id="o-chart"></div>
+    </div>
+    <div class="card">
+      <div class="rowhead"><h2>${ui.period === 'week' ? 'Weekly' : 'Monthly'} change</h2>${segHTML('period', ['week', 'month'], ui.period, ['Weekly', 'Monthly'])}</div>
+      <div class="readout" id="o-bread">${ui.scope === 'all' ? '' : esc(scopeName) + '. '}Tap a bar to see the amount</div>
+      <div class="chartbox" id="o-bars"></div>
+      <div class="legend"><span><i style="background:var(--ink)"></i>Grew</span><span><i style="background:var(--shrank)"></i>Shrank</span></div>
+      <p class="muted small">Includes ISA price moves, so it’s not only what you saved.</p>
+    </div>
+    <div class="section-h"><h2>Your banks</h2><span>Tap a card to open</span></div>
+    <div class="wallet" style="height:${(order.length - 1) * STEP + CARD}px">${cards}</div>`;
+  wireHeader(el);
+  $$('[data-range]', el).forEach(b => b.onclick = () => { ui.range = b.dataset.range; renderOverview(); });
+  $$('[data-period]', el).forEach(b => b.onclick = () => { ui.period = b.dataset.period; renderOverview(); });
+  $$('[data-scope]', el).forEach(b => b.onclick = () => { ui.scope = b.dataset.scope; renderOverview(); });
+  $$('[data-bank]', el).forEach(b => b.onclick = () => { ui.bank = b.dataset.bank; renderOverview(); window.scrollTo(0, 0); });
+  lineChart($('#o-chart'), pts, $('#o-read'));
+  barChart($('#o-bars'), periodBars(scoped, ui.period), $('#o-bread'));
+}
+function headerHTML() {
+  return `<header class="topbar"><div><h1>Hej Anders</h1><div class="sync" id="sync"><i></i><span></span></div></div>
+    <button class="btn small" data-hupdate>+ Update</button></header>`;
+}
+function wireHeader(el) { $('[data-hupdate]', el).onclick = () => go('update'); setSync(); }
+
+function renderBank(el) {
+  const b = bankById(ui.bank), as = accountsIn(b.id);
+  const series = netSeries(a => a.bank === b.id);
+  const all = netSeries();
+  const has = series.length > 0;
+  const last = has ? series[series.length - 1] : null;
+  const m = has ? changeBetween(series, addDays(last.date, -30), last.date) : null;
+  const share = has && all.length ? last.v / (all[all.length - 1].v || 1) * 100 : 0;
+  const rows = as.map(a => {
+    const l = latest(a.id);
+    return `<div class="acct-row"><span><b>${esc(a.name)}</b><small class="${l && dayDiff(l[0], today()) > 8 ? 'stale' : ''}">${l ? `${ageText(l[0])}, ${l[1].src === 'manual' ? 'typed' : l[1].src.toUpperCase()}` : 'No balance yet'}</small></span>
+      <span class="r"><b>${l ? money(l[1].b, a.cur) : '—'}</b>${l && a.cur !== 'GBP' ? `<small>≈ ${GBP.format(toGBP(a, l[1]))}</small>` : ''}</span></div>`;
+  }).join('');
+  const pts = has ? series.slice(-Math.min(series.length, RANGES[ui.bankRange] + 1)) : [];
+  el.innerHTML = `<header class="topbar"><div class="back-wrap"><button class="iconbtn round" data-back aria-label="Back to overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>${esc(b.name)}</h1></div></header>
+    <div class="bigcard" style="background:${b.color};color:${cardInk(b.color)}">
+      <span class="wrow ws"><span>${as.length} account${as.length === 1 ? '' : 's'}</span><span>${has ? share.toFixed(0) + '% of total' : ''}</span></span>
+      <span><span class="bc-v">${has ? GBP.format(last.v) : 'No balance yet'}</span>${m != null ? `<span class="bc-pill">${signed(m)} in 30 days</span>` : ''}</span>
+    </div>
+    <div class="card list">${rows}</div>
+    ${has ? `<div class="card"><div class="rowhead"><h2>${esc(b.name)} over time</h2>${segHTML('brange', ['1M', '3M', '1Y', 'All'], ui.bankRange)}</div>
+      <div class="readout" id="b-read">Latest: <b>${GBP.format(last.v)}</b> on ${fmtDate(last.date)}</div><div class="chartbox" id="b-chart"></div></div>` : ''}
+    <div class="duo"><button class="btn" data-bimport>Import statement</button><button class="btn light" data-btype>Type a balance</button></div>`;
+  $('[data-back]', el).onclick = () => { ui.bank = null; renderOverview(); };
+  $$('[data-brange]', el).forEach(x => x.onclick = () => { ui.bankRange = x.dataset.brange; renderOverview(); });
+  $('[data-bimport]', el).onclick = () => { ui.prefAcct = as[0]?.id; go('update'); $('#file').click(); };
+  $('[data-btype]', el).onclick = () => { go('update'); const i = $(`#m-${as[0]?.id}`); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } };
+  if (has) lineChart($('#b-chart'), pts, $('#b-read'), b.color);
+}
+
+// ---------- UPDATE (manual) ----------
+function renderUpdate() {
+  const d = $('#m-date'); if (!d.value) d.value = today(); d.max = today();
+  const box = $('#m-fields');
+  const keep = {}; $$('input[data-acct]', box).forEach(i => keep[i.dataset.acct] = i.value);
+  box.innerHTML = banks().map(b => { const as = accountsIn(b.id); return as.length ? `<h3 class="grp"><i style="background:${b.color}"></i>${esc(b.name)}</h3>` + as.map(a => {
+    const l = latest(a.id);
+    return `<div class="field"><label for="m-${a.id}" class="n">${esc(a.name)}<span class="hint">${l ? `Last: ${money(l[1].b, a.cur)}, ${fmtDate(l[0])}` : 'No balance yet'}</span></label>
+      <div class="money"><span>${a.cur === 'DKK' ? 'kr' : '£'}</span><input id="m-${a.id}" data-acct="${a.id}" inputmode="decimal" autocomplete="off" value="${esc(keep[a.id] || '')}" placeholder="${l ? l[1].b.toFixed(2) : '0.00'}"></div>
+      ${a.cur !== 'GBP' ? `<div class="conv" id="c-${a.id}"></div>` : ''}</div>`;
+  }).join('') : ''; }).join('');
+  $$('input[data-acct]', box).forEach(inp => inp.addEventListener('input', () => {
+    const c = $('#c-' + inp.dataset.acct); if (!c) return;
+    const v = Core.parseNum(inp.value); c.textContent = isFinite(v) ? '≈ ' + GBP.format(v * S.meta.dkkRate) : '';
+  }));
+}
+$('#m-save').addEventListener('click', async () => {
+  const date = $('#m-date').value || today();
+  const changed = [];
+  for (const inp of $$('input[data-acct]')) {
+    if (!inp.value.trim()) continue;
+    const v = Core.parseNum(inp.value);
+    if (!isFinite(v)) { inp.focus(); toast(`“${inp.value}” isn’t a number`); return; }
+    const a = acctById(inp.dataset.acct);
+    S.bal[a.id] = S.bal[a.id] || {};
+    S.bal[a.id][date] = { b: Math.round(v * 100) / 100, src: 'manual', ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) };
+    changed.push(a.id);
+  }
+  if (!changed.length) { toast('Enter at least one balance'); return; }
+  changed.forEach(saveBal);
+  $$('input[data-acct]').forEach(i => i.value = '');
+  toast(`Saved ${changed.length} balance${changed.length === 1 ? '' : 's'} for ${fmtDate(date)}`);
+  go('overview');
+});
+
+// ---------- IMPORT ----------
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+let pdfLib = null;
+const loadScript = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src)); document.head.appendChild(s); });
+function loadPdfJs() {
+  if (!pdfLib) {
+    pdfLib = loadScript(PDFJS + 'pdf.worker.min.js').then(() => loadScript(PDFJS + 'pdf.min.js')).then(() => {
+      const L = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+      L.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
+      return L;
+    });
+    pdfLib.catch(() => { pdfLib = null; });
+  }
+  return pdfLib;
+}
+async function readPdf(file) {
+  const L = await loadPdfJs();
+  const doc = await L.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false, disableFontFace: true }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    pages.push(tc.items.map(i => ({ x: i.transform[4], y: i.transform[5], str: i.str })));
+  }
+  return pages;
+}
+
+let imp = null;
+$('#file').addEventListener('change', async e => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+  openSheet(`<h2 id="sheet-title">Reading ${esc(file.name)}</h2><p class="muted">One moment…</p>`);
+  try {
+    let r;
+    if (isPdf) { r = Core.analyzePDF(await readPdf(file), file.name); }
+    else {
+      r = Core.analyzeCSV(await file.text(), file.name);
+      r.txns = Core.buildTxns(r.data, r.map);
+    }
+    r.file = file.name;
+    const gb = r.bank && banks().find(b => b.name.toLowerCase().includes(r.bank));
+    const guess = (gb && accountsIn(gb.id)[0]) || (r.bank === 'danish' && accounts().find(a => a.cur === 'DKK'));
+    r.acct = (guess || acctById(ui.prefAcct) || accounts()[0]).id; ui.prefAcct = null;
+    imp = r;
+    renderImport();
+  } catch (err) {
+    openSheet(`<h2 id="sheet-title">Couldn’t read that file</h2><div class="note err">${esc(isPdf ? 'The PDF reader didn’t load or the file is protected. Check your connection and try again, or use the CSV export instead.' : 'This doesn’t look like a CSV statement.')}</div><button class="btn full ghost" id="x">Close</button>`);
+    $('#x').onclick = closeSheet;
+  }
+});
+
+function importPlan() {
+  const r = imp, a = acctById(r.acct);
+  const txns = r.txns.map(t => ({ ...t }));
+  const hasBal = txns.length && txns.every(t => isFinite(t.balance));
+  const needsAnchor = !hasBal && txns.length > 0;
+  let anchor = NaN;
+  if (needsAnchor) { anchor = Core.parseNum(r.anchorText); if (isFinite(anchor)) Core.applyAnchor(txns, anchor); }
+  const days = (hasBal || isFinite(anchor)) ? Core.dailyClosing(txns) : {};
+  if (r.kind === 'pdf' && isFinite(r.closing) && r.period && r.period.to) days[r.period.to] = Math.round((r.closing + (r.pots || 0)) * 100) / 100;
+  const existing = new Set();
+  Object.keys(S.tx).filter(k => k.startsWith(a.id + '-')).forEach(k => Object.keys(S.tx[k]).forEach(id => existing.add(id)));
+  const dupes = txns.filter(t => existing.has(t.id)).length;
+  const dates = Object.keys(days).sort();
+  const from = r.period?.from || txns[0]?.date, to = r.period?.to || txns[txns.length - 1]?.date;
+  return { a, txns, needsAnchor, anchor, days, dates, dupes, from, to };
+}
+
+function renderImport() {
+  const r = imp, p = importPlan();
+  const lastTx = p.txns[p.txns.length - 1];
+  const colSel = (key, label, allowNone) => `<label class="lbl" for="map-${key}">${label}</label><select class="inp" id="map-${key}" data-map="${key}">${allowNone ? '<option value="-1">None</option>' : ''}${r.header.map((h, i) => `<option value="${i}" ${r.map[key] === i ? 'selected' : ''}>${esc(h || 'Column ' + (i + 1))}</option>`).join('')}</select>`;
+  const closingLine = r.kind === 'pdf' && isFinite(r.closing) && r.period
+    ? `<div class="kv"><span>Closing balance</span><b>${money(r.closing + (r.pots || 0), p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(r.period.to, true)}${r.pots ? `, includes ${money(r.pots, p.a.cur)} in Pots` : ''}</span></b></div>` : (p.dates.length ? `<div class="kv"><span>Closing balance</span><b>${money(p.days[p.dates[p.dates.length - 1]], p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(p.dates[p.dates.length - 1], true)}</span></b></div>` : '');
+  const ok = p.dates.length > 0 || p.needsAnchor;
+  openSheet(`
+    <h2 id="sheet-title">Import statement</h2>
+    <p class="muted" style="margin:0 0 6px;font-size:.86rem;word-break:break-all">${esc(r.file)}</p>
+    <label class="lbl" for="imp-acct">Account</label>
+    <select class="inp" id="imp-acct">${acctOptions(r.acct)}</select>
+    ${!p.txns.length ? `<div class="note err">No transactions found${r.kind === 'csv' ? '. Check the columns below match your file.' : ' in this PDF. Try the CSV export from the same bank.'}</div>` : ''}
+    ${p.needsAnchor ? `<div class="note warn">This file lists transactions but not your balance. Type the balance after the last transaction${lastTx ? ` (${fmtDate(lastTx.date)}, ${esc(lastTx.desc || 'last item')})` : ''}. If nothing has happened since, that’s your current balance in the app.</div>
+      <div class="money"><span>${p.a.cur === 'DKK' ? 'kr' : '£'}</span><input id="imp-anchor" inputmode="decimal" autocomplete="off" placeholder="Balance after last transaction" value="${esc(r.anchorText || '')}"></div>` : ''}
+    <div style="margin-top:12px">
+      ${p.from ? `<div class="kv"><span>Period</span><b>${fmtDate(p.from)} to ${fmtDate(p.to, true)}</b></div>` : ''}
+      <div class="kv"><span>Transactions</span><b>${p.txns.length}${p.dupes ? ` <span class="muted" style="font-weight:400">(${p.dupes} already imported)</span>` : ''}</b></div>
+      ${closingLine}
+      <div class="kv"><span>Daily balances added</span><b>${p.dates.length}</b></div>
+    </div>
+    ${p.txns.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead><tbody>
+      ${p.txns.slice(-5).reverse().map(t => `<tr><td>${fmtDate(t.date)}</td><td class="desc">${esc(t.desc)}</td><td class="num ${t.amount > 0 ? 'up' : ''}">${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}</td><td class="num">${isFinite(t.balance) ? t.balance.toFixed(2) : '—'}</td></tr>`).join('')}
+      </tbody></table></div>${p.txns.length > 5 ? `<p class="muted" style="font-size:.8rem;margin:6px 0 0">Latest 5 of ${p.txns.length}</p>` : ''}` : ''}
+    ${r.kind === 'csv' ? `<details style="margin-top:10px" ${p.txns.length ? '' : 'open'}><summary class="linkbtn" style="cursor:pointer">Columns</summary>
+      ${colSel('date', 'Date')}${colSel('amount', 'Amount', true)}${colSel('balance', 'Balance', true)}${colSel('desc', 'Description', true)}</details>` : ''}
+    <div class="actions"><button class="btn ghost" id="imp-cancel">Cancel</button><button class="btn" id="imp-go" ${ok ? '' : 'disabled'}>Import</button></div>`);
+  $('#imp-cancel').onclick = closeSheet;
+  $('#imp-acct').onchange = e => { imp.acct = e.target.value; renderImport(); };
+  const an = $('#imp-anchor');
+  if (an) { an.oninput = () => { imp.anchorText = an.value; }; an.onchange = () => { renderImport(); setTimeout(() => $('#imp-go')?.focus(), 0); }; an.onkeydown = e => { if (e.key === 'Enter') an.blur(); }; }
+  $$('[data-map]').forEach(s => s.onchange = () => { imp.map[s.dataset.map] = +s.value; imp.txns = Core.buildTxns(imp.data, imp.map); renderImport(); });
+  $('#imp-go').onclick = () => { if (an) imp.anchorText = an.value; doImport(); };
+}
+
+function doImport() {
+  const p = importPlan();
+  if (!p.dates.length) { toast(p.needsAnchor ? 'Type the balance first' : 'Nothing to import'); renderImport(); return; }
+  const id = 'imp' + Date.now().toString(36), a = p.a, src = imp.kind;
+  S.bal[a.id] = S.bal[a.id] || {};
+  p.dates.forEach(d => { S.bal[a.id][d] = { b: p.days[d], src, imp: id, ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) }; });
+  const touched = new Set();
+  let added = 0;
+  p.txns.forEach(t => {
+    const k = a.id + '-' + t.date.slice(0, 7);
+    S.tx[k] = S.tx[k] || {};
+    if (S.tx[k][t.id]) return;
+    S.tx[k][t.id] = { d: t.date, t: t.time || '', a: t.amount, b: isFinite(t.balance) ? t.balance : null, n: t.desc, c: t.category || '', imp: id };
+    touched.add(k); added++;
+  });
+  S.meta.imports.unshift({ id, acct: a.id, file: imp.file.slice(0, 120), kind: src, from: p.from || p.dates[0], to: p.to || p.dates[p.dates.length - 1], tx: added, days: p.dates.length, at: today() });
+  S.meta.imports = S.meta.imports.slice(0, 200);
+  saveMeta(); saveBal(a.id); touched.forEach(saveTx);
+  closeSheet(); imp = null;
+  toast(`Imported ${p.dates.length} balance${p.dates.length === 1 ? '' : 's'} into ${fullName(a)}`);
+  go('overview');
+}
+
+function undoImport(id, quiet) {
+  const rec = S.meta.imports.find(i => i.id === id); if (!rec) return;
+  const balTouched = [];
+  Object.keys(S.bal).forEach(a => { const bal = S.bal[a]; let hit = false; Object.keys(bal).forEach(d => { if (bal[d].imp === id) { delete bal[d]; hit = true; } }); if (hit) balTouched.push(a); });
+  const touched = [];
+  Object.keys(S.tx).forEach(k => {
+    let hit = false;
+    Object.keys(S.tx[k]).forEach(t => { if (S.tx[k][t].imp === id) { delete S.tx[k][t]; hit = true; } });
+    if (hit) touched.push(k);
+  });
+  S.meta.imports = S.meta.imports.filter(i => i.id !== id);
+  saveMeta(); balTouched.forEach(saveBal);
+  touched.forEach(k => { if (Object.keys(S.tx[k]).length) saveTx(k); else { delete S.tx[k]; Store.del('tx-' + k); } });
+  if (!quiet) { toast('Import undone'); render(); }
+}
+const demoImports = () => S.meta.imports.filter(i => i.id.startsWith('demo-'));
+
+// ---------- HISTORY ----------
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+function renderHistory() {
+  const sel = $('#h-acct');
+  const cur = sel.value && acctById(sel.value) ? sel.value : accounts()[0]?.id;
+  sel.innerHTML = acctOptions(cur);
+  const a = acctById(cur);
+  const es = a ? entries(a.id).reverse() : [];
+  $('#h-list').innerHTML = es.length ? es.slice(0, 400).map(([d, e]) => `<div class="hist-row"><span class="d">${fmtDate(d, true)}<small><span class="badge ${e.src}">${e.src === 'manual' ? 'Typed' : e.src.toUpperCase()}</span></small></span>
+    <b>${money(e.b, a.cur)}</b><button class="iconbtn" data-del="${d}" aria-label="Delete balance for ${fmtDate(d, true)}">${TRASH}</button></div>`).join('')
+    : `<p class="muted" style="margin:12px 0 4px">No balances for this account yet.</p>`;
+  $$('[data-del]', $('#h-list')).forEach(b => b.onclick = () => confirmTap(b, 'Delete', () => { delete S.bal[a.id][b.dataset.del]; saveBal(a.id); renderHistory(); }));
+  const ims = S.meta.imports;
+  $('#h-imports').innerHTML = ims.length ? ims.slice(0, 40).map(i => `<div class="hist-row"><span class="d">${esc(i.id.startsWith('demo-') ? i.file : fullName(acctById(i.acct)))}<small>${fmtDate(i.from)} to ${fmtDate(i.to)}${i.tx ? `, ${i.tx} transactions` : ''}${i.kind !== 'manual' ? ', ' + i.kind.toUpperCase() : ''}</small></span><span></span>
+    <button class="btn ghost small" data-undo="${i.id}">Undo</button></div>`).join('') : `<p class="muted" style="margin:0">Nothing imported yet.</p>`;
+  $$('[data-undo]').forEach(b => b.onclick = () => confirmTap(b, 'Undo import?', () => undoImport(b.dataset.undo)));
+}
+$('#h-acct').addEventListener('change', renderHistory);
+
+// ---------- SETTINGS ----------
+function removeAccount(id) {
+  S.meta.accounts = S.meta.accounts.filter(x => x.id !== id);
+  S.meta.imports = S.meta.imports.filter(i => i.acct !== id);
+  if (S.bal[id]) { delete S.bal[id]; Store.del('bal-' + id); }
+  Object.keys(S.tx).filter(k => k.startsWith(id + '-')).forEach(k => { delete S.tx[k]; Store.del('tx-' + k); });
+}
+function renderSettings() {
+  $('#s-accts').innerHTML = banks().map(b => {
+    const as = accountsIn(b.id);
+    return `<div class="bank-ed">
+      <div class="bank-ed-h"><span class="dot" style="background:${b.color}"></span><input class="inp strong" data-bname="${b.id}" value="${esc(b.name)}" aria-label="Bank name" maxlength="40">
+        <button class="iconbtn" data-brm="${b.id}" aria-label="Remove ${esc(b.name)} and its accounts">${TRASH}</button></div>
+      ${as.map(a => `<div class="acct-ed">
+        <input class="inp" data-name="${a.id}" value="${esc(a.name)}" aria-label="Account name in ${esc(b.name)}" maxlength="40">
+        <select class="inp" data-cur="${a.id}" aria-label="Currency" style="width:auto">${['GBP', 'DKK'].map(c => `<option ${a.cur === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+        <button class="iconbtn" data-rm="${a.id}" aria-label="Remove ${esc(a.name)}">${TRASH}</button></div>`).join('')}
+      <div class="swatches" role="group" aria-label="Card colour for ${esc(b.name)}">${PALETTE.map(c => `<button data-color="${c}" data-cbank="${b.id}" aria-pressed="${b.color === c}" aria-label="Colour ${c}" style="background:${c}"></button>`).join('')}</div>
+      <button class="linkbtn" data-addacct="${b.id}">Add an account to ${esc(b.name)}</button></div>`;
+  }).join('');
+  $$('[data-bname]').forEach(i => i.onchange = () => { const b = bankById(i.dataset.bname); b.name = i.value.trim() || b.name; saveMeta(); renderSettings(); toast('Saved'); });
+  $$('[data-name]').forEach(i => i.onchange = () => { const a = acctById(i.dataset.name); a.name = i.value.trim() || a.name; saveMeta(); toast('Saved'); });
+  $$('[data-cur]').forEach(s => s.onchange = () => { const a = acctById(s.dataset.cur); a.cur = s.value; Object.values(S.bal[a.id] || {}).forEach(e => { if (a.cur !== 'GBP' && !e.fx) e.fx = S.meta.dkkRate; }); saveMeta(); saveBal(a.id); toast('Saved'); });
+  $$('[data-rm]').forEach(b => b.onclick = () => {
+    const a = acctById(b.dataset.rm);
+    confirmTap(b, entries(a.id).length ? 'Delete + data' : 'Remove', () => { removeAccount(a.id); saveMeta(); renderSettings(); });
+  });
+  $$('[data-brm]').forEach(btn => btn.onclick = () => {
+    const b = bankById(btn.dataset.brm), as = accountsIn(b.id);
+    confirmTap(btn, as.some(a => entries(a.id).length) ? 'Delete bank + data' : 'Remove bank', () => {
+      as.forEach(a => removeAccount(a.id));
+      S.meta.banks = banks().filter(x => x.id !== b.id);
+      saveMeta(); renderSettings();
+    });
+  });
+  $$('[data-cbank]').forEach(btn => btn.onclick = () => { bankById(btn.dataset.cbank).color = btn.dataset.color; saveMeta(); renderSettings(); });
+  $$('[data-addacct]').forEach(btn => btn.onclick = () => {
+    const id = 'a' + rid();
+    S.meta.accounts.push({ id, bank: btn.dataset.addacct, name: 'New account', cur: 'GBP', kind: 'bank' });
+    saveMeta(); renderSettings(); $(`[data-name="${id}"]`).select();
+  });
+  const demo = $('#s-demo');
+  demo.hidden = !demoImports().length;
+  const r = $('#s-rate'); if (document.activeElement !== r) r.value = S.meta.dkkRate;
+  $('#s-rate-meta').textContent = `Set ${fmtDate(S.meta.rateDate, true)}. 1 GBP ≈ ${(1 / S.meta.dkkRate).toFixed(2)} DKK. Update it now and then from your bank app.`;
+  setSync();
+}
+$('#s-add').addEventListener('click', () => {
+  const bid = 'b-' + rid(), id = 'a' + rid();
+  S.meta.banks.push({ id: bid, name: 'New bank', color: PALETTE[S.meta.banks.length % PALETTE.length] });
+  S.meta.accounts.push({ id, bank: bid, name: 'Account', cur: 'GBP', kind: 'bank' });
+  saveMeta(); renderSettings(); $(`[data-bname="${bid}"]`).select();
+});
+$('#s-demo-rm').addEventListener('click', e => confirmTap(e.currentTarget, 'Tap again to remove', () => {
+  demoImports().forEach(i => undoImport(i.id, true));
+  toast('Demo data removed'); render();
+}));
+$('#s-rate').addEventListener('change', e => {
+  const v = Core.parseNum(e.target.value);
+  if (!(v > 0 && v < 10)) { toast('Enter the rate as pounds per krone, e.g. 0.1147'); return; }
+  S.meta.dkkRate = v; S.meta.rateDate = today(); saveMeta(); renderSettings(); toast('Rate updated');
+});
+$('#s-export').addEventListener('click', async () => {
+  const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: S.meta, bal: S.bal, tx: S.tx }, null, 1);
+  const filename = `savings-tracker-backup-${today()}.json`;
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (dl) { await dl.save({ filename, data }); return; }
+  } catch (e) { if (e && (e.code === 'cancelled' || e.code === 'declined')) return; }
+  const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast('Backup saved to Downloads');
+});
+$('#s-restore-file').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  let b;
+  try { b = JSON.parse(await f.text()); } catch (err) { toast('That file isn’t a backup'); return; }
+  if (!b || !b.meta || !Array.isArray(b.meta.accounts)) { toast('That file isn’t a backup'); return; }
+  const nBal = Object.values(b.bal || {}).reduce((n, x) => n + Object.keys(x).length, 0);
+  openSheet(`<h2 id="sheet-title">Restore backup?</h2>
+    <p class="muted">From ${esc(b.exported ? fmtDate(b.exported.slice(0, 10), true) : 'an unknown date')}: ${b.meta.accounts.length} accounts and ${nBal} saved balances.</p>
+    <div class="note warn">This replaces everything in the app now.</div>
+    <div class="actions"><button class="btn ghost" id="r-no">Cancel</button><button class="btn" id="r-yes">Restore</button></div>`);
+  $('#r-no').onclick = closeSheet;
+  $('#r-yes').onclick = () => {
+    const old = Object.keys(docsFrom(S));
+    S = migrate({ meta: b.meta, bal: b.bal || {}, tx: b.tx || {} }); delete S._dirty;
+    const docs = docsFrom(S);
+    old.filter(id => !(id in docs)).forEach(id => Store.del(id));
+    for (const id in docs) Store.put(id, docs[id]);
+    Store.cache(); closeSheet(); toast('Backup restored'); go('overview');
+  };
+});
+$('#s-wipe').addEventListener('click', e => confirmTap(e.currentTarget, 'Tap again to delete all', async () => {
+  const ids = Object.keys(docsFrom(S));
+  S = fresh(); S.meta.rateDate = today();
+  ids.forEach(id => id !== 'meta' && Store.del(id)); saveMeta();
+  toast('All data deleted'); go('overview');
+}));
+
+// ---------- boot ----------
+function render() {
+  if (tab === 'overview') renderOverview();
+  else if (tab === 'update') renderUpdate();
+  else if (tab === 'history') renderHistory();
+  else renderSettings();
+  setSync();
+}
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => tab === 'overview' && renderOverview(), 200); });
+
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+const cached = Store.readCache();
+if (cached) { S = migrate(cached.S); }
+render();
+(async () => {
+  const cloud = await Store.connect();
+  if (cloud) {
+    try {
+      const docs = await Store.loadCloud();
+      if (docs.meta) { S = stateFrom(docs); Store.cache(); if (S._dirty) { delete S._dirty; saveMeta(); } }
+      else if (cached && (!cached.uid || cached.uid === Store.uid) && (Object.keys(cached.S.bal).length || cached.S.meta.imports.length)) {
+        const all = docsFrom(S); for (const id in all) Store.put(id, all[id]);
+      } else { S = fresh(); S.meta.rateDate = today(); saveMeta(); }
+    } catch (e) { Store.failed = true; }
+  } else Store.cache();
+  render();
+})();
+})();
+</script></body></html>
