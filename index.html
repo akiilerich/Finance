@@ -17,7 +17,7 @@
 <style>
 :root{
   --bg:#E7ECFA; --surface:#FFFFFF; --sunk:#EEF1FB; --ink:#1D1B2E; --muted:#55536B; --line:#E1E5F2; --line2:#D2D8EB;
-  --accent:#9BE3B0; --on-accent:#1D1B2E; --shrank:#F2A391; --down:#B23E26; --down-soft:rgba(226,104,77,.16);
+  --accent:#9BE3B0; --on-accent:#1D1B2E; --shrank:#F2A391; --market:#4FB57A; --lost:#F8CFC4; --down:#B23E26; --down-soft:rgba(226,104,77,.16);
   --brass:#9A6510; --brass-soft:rgba(232,178,58,.22); --on-ink:#FFFFFF; --card-edge:transparent;
   --radius-lg:26px; --radius:18px; --radius-sm:14px;
   --font:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -27,13 +27,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
-    --shrank:#B9614F; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+    --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
     --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
-  --shrank:#B9614F; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+  --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
   --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -104,6 +104,16 @@ button{cursor:pointer}
 .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .stale{color:var(--brass)!important}
 
+.paidin{margin-top:4px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--sunk)}
+.paidin label{display:flex;justify-content:space-between;font-size:.84rem;font-weight:700;margin-bottom:6px}
+.paidin .money{background:var(--surface)}
+.trans{margin-top:14px;padding:12px;border-radius:var(--radius);background:var(--sunk)}
+.trans h3{margin:0 0 2px;font-size:.95rem;font-weight:800}
+.tick{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line2)}
+.tick input{width:22px;height:22px;accent-color:var(--ink)}
+.tick span{font-weight:700;font-size:.9rem}.tick small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
+.acct-ed{grid-template-columns:1fr auto!important}
+.acct-opts{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:8px}
 /* Forms */
 .grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
 .grp i{width:12px;height:12px;border-radius:4px;display:inline-block}
@@ -228,6 +238,11 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
       <div id="m-fields" style="margin-top:8px"></div>
       <button class="btn full" id="m-save" style="margin-top:14px">Save balances</button>
     </div>
+    <div class="card">
+      <h2>Record a transfer</h2>
+      <p class="sub">Money moved into or out of an investment account, like Chase to Trading 212. It counts as saved, not market growth. Transfers in your bank statements are picked up when you import them.</p>
+      <div id="t-form"></div>
+    </div>
   </section>
 
   <!-- HISTORY -->
@@ -239,6 +254,11 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
       </div>
       <select class="inp" id="h-acct" aria-label="Account"></select>
       <div id="h-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Transfers</h2>
+      <p class="sub">Money moved into or out of investments</p>
+      <div id="h-trans"></div>
     </div>
     <div class="card">
       <h2>Imports</h2>
@@ -647,7 +667,7 @@ const DEFAULT_ACCOUNTS = [
   { id: 'dk', bank: 'b-dk', name: 'Account', cur: 'DKK', kind: 'bank' },
   { id: 'isa', bank: 'b-t212', name: 'Stocks & Shares ISA', cur: 'GBP', kind: 'investment' },
 ];
-const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', imports: [] }, bal: {}, tx: {} });
+const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', imports: [] }, bal: {}, tx: {}, tr: {} });
 // v1 had a flat list of accounts: give each one a bank, keeping account ids so history stays attached.
 const NAMED_COLORS = { chase: '#0F7C6E', monzo: '#1D1B2E', 'uk bank 3': '#E8B23A', 'danish bank': '#D9534F', 'trading 212': '#3B3FB6' };
 function giveColors(m) {
@@ -656,6 +676,7 @@ function giveColors(m) {
   return changed;
 }
 function migrate(st) {
+  st.tr = st.tr || {};
   const m = st.meta;
   if (m.banks && m.accounts.every(a => a.bank)) { if (giveColors(m)) st._dirty = true; return st; }
   m.banks = m.banks || [];
@@ -716,6 +737,7 @@ const docsFrom = st => {
   const docs = { meta: st.meta };
   for (const a in st.bal) docs['bal-' + a] = { entries: st.bal[a] };
   for (const k in st.tx) docs['tx-' + k] = { items: st.tx[k] };
+  if (st.tr && Object.keys(st.tr).length) docs.transfers = { items: st.tr };
   return docs;
 };
 const stateFrom = docs => {
@@ -723,12 +745,14 @@ const stateFrom = docs => {
   for (const id in docs) {
     if (id.startsWith('bal-')) st.bal[id.slice(4)] = docs[id].entries || {};
     else if (id.startsWith('tx-')) st.tx[id.slice(3)] = docs[id].items || {};
+    else if (id === 'transfers') st.tr = docs[id].items || {};
   }
   return migrate(st);
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 const saveMeta = () => { delete S._dirty; return Store.put('meta', S.meta); };
 const saveBal = a => Store.put('bal-' + a, { entries: S.bal[a] || {} });
+const saveTr = () => Object.keys(S.tr).length ? Store.put('transfers', { items: S.tr }) : Store.del('transfers');
 const saveTx = k => Object.keys(S.tx[k] || {}).length ? Store.put('tx-' + k, { items: S.tx[k] }) : Store.del('tx-' + k);
 
 function setSync() {
@@ -841,27 +865,27 @@ function lineChart(box, pts, readout, color) {
   svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
 }
 
-function barChart(box, bars, readout) {
+function barChart(box, bars, readout, showMarket) {
   const W = Math.max(280, Math.round(box.clientWidth || 340)), H = 170, T = 10, B = 22;
-  const vals = bars.map(b => b.v || 0);
-  let hi = Math.max(0, ...vals), lo = Math.min(0, ...vals);
+  const parts = bars.map(b => b.v ? { sp: Math.max(0, b.v.saved), sn: Math.min(0, b.v.saved), mp: showMarket ? Math.max(0, b.v.market) : 0, mn: showMarket ? Math.min(0, b.v.market) : 0 } : null);
+  let hi = Math.max(0, ...parts.map(p => p ? p.sp + p.mp : 0)), lo = Math.min(0, ...parts.map(p => p ? p.sn + p.mn : 0));
   if (hi - lo < 1) hi = 1;
   const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
-  const bw = W / bars.length, gap = Math.max(3, bw * .28);
-  const rects = bars.map((b, i) => {
-    if (b.v == null) return `<rect x="${i * bw + gap / 2}" y="${y(0) - 1}" width="${bw - gap}" height="2" fill="var(--line)"/>`;
-    const y0 = y(Math.max(0, b.v)), h = Math.max(2, Math.abs(y(b.v) - y(0)));
-    return `<rect data-i="${i}" x="${i * bw + gap / 2}" y="${y0}" width="${bw - gap}" height="${h}" rx="5" fill="${b.v >= 0 ? 'var(--ink)' : 'var(--shrank)'}"/>`;
-  }).join('');
+  const bw = W / bars.length, gap = Math.max(3, bw * .28), x = i => i * bw + gap / 2, w = bw - gap;
+  const seg = (i, from, to, fill) => to === from ? '' : `<rect x="${x(i)}" y="${Math.min(y(from), y(to))}" width="${w}" height="${Math.max(1.5, Math.abs(y(to) - y(from)))}" rx="4" fill="${fill}"/>`;
+  const rects = parts.map((p, i) => !p ? `<rect x="${x(i)}" y="${y(0) - 1}" width="${w}" height="2" fill="var(--line)"/>`
+    : seg(i, 0, p.sp, 'var(--ink)') + seg(i, p.sp, p.sp + p.mp, 'var(--market)') + seg(i, 0, p.sn, 'var(--shrank)') + seg(i, p.sn, p.sn + p.mn, 'var(--lost)')
+      + (p.sp + p.mp + p.sn + p.mn === 0 ? `<rect x="${x(i)}" y="${y(0) - 1}" width="${w}" height="2" fill="var(--line2)"/>` : '')).join('');
   const labs = bars.map((b, i) => (i % 2 === (bars.length - 1) % 2) ? `<text class="axis" x="${i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${b.short}</text>` : '').join('');
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Change per period"><line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/>${rects}${labs}<rect class="hl" fill="var(--ink)" fill-opacity=".06" style="display:none"/></svg>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Saved and market change per period"><line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line2)"/>${rects}${labs}<rect class="hl" fill="var(--ink)" fill-opacity=".06" style="display:none"/></svg>`;
   const svg = $('svg', box), hl = $('.hl', svg);
   readout.dataset.def = readout.innerHTML;
   const show = e => {
     const r = svg.getBoundingClientRect(); const i = Math.min(bars.length - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * bars.length)));
     const b = bars[i];
     hl.style.display = ''; hl.setAttribute('x', i * bw); hl.setAttribute('y', 0); hl.setAttribute('width', bw); hl.setAttribute('height', H - B + 4);
-    readout.innerHTML = `${esc(b.label)}: <b class="${b.v > 0 ? 'up' : b.v < 0 ? 'dn' : ''}">${b.v == null ? 'no data yet' : signed(b.v)}</b>`;
+    const cls = v => v > 0 ? 'up' : v < 0 ? 'dn' : '';
+    readout.innerHTML = `${esc(b.label)}: ` + (!b.v ? '<b>no data yet</b>' : `saved <b class="${cls(b.v.saved)}">${signed(b.v.saved)}</b>${showMarket ? `, market <b class="${cls(b.v.market)}">${signed(b.v.market)}</b>` : ''}`);
   };
   const reset = () => { hl.style.display = 'none'; readout.innerHTML = readout.dataset.def; };
   svg.addEventListener('pointerdown', show); svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) show(e); });
@@ -869,14 +893,38 @@ function barChart(box, bars, readout) {
   svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
 }
 
-function periodBars(series, mode) {
+const isInv = a => !!a && a.kind === 'investment';
+const hasInvestments = filter => accounts().some(a => isInv(a) && (!filter || filter(a)) && entries(a.id).length);
+const trList = () => Object.entries(S.tr).map(([id, t]) => ({ id, ...t })).sort((a, b) => a.d < b.d ? -1 : 1);
+// Split the change between two days into money saved and market growth.
+//   saved  = change in cash accounts + money moved into investments
+//   market = change in investments − money moved into them
+// Only accounts that already had a balance on the first day count (same rule as before),
+// so adding an account isn't mistaken for saving.
+function splitBetween(series, d0, d1, filter) {
+  const a = pointOn(series, d0), b = pointOn(series, d1);
+  if (!a || !b) return null;
+  let cash = 0, inv = 0;
+  for (const k in a.per) { const ch = (b.per[k] ?? 0) - a.per[k]; if (isInv(acctById(k))) inv += ch; else cash += ch; }
+  const inScope = x => !!x && (!filter || filter(x));
+  let investedAll = 0, investedPresent = 0;
+  for (const t of trList()) {
+    if (t.d <= d0 || t.d > d1) continue;
+    const to = acctById(t.to), from = acctById(t.from);
+    if (isInv(to) && !isInv(from) && (inScope(to) || inScope(from))) { investedAll += t.a; if (inScope(to) && a.per[to.id] !== undefined) investedPresent += t.a; }
+    if (isInv(from) && !isInv(to) && (inScope(from) || inScope(to))) { investedAll -= t.a; if (inScope(from) && a.per[from.id] !== undefined) investedPresent -= t.a; }
+  }
+  const r2 = v => Math.round(v * 100) / 100;
+  return { saved: r2(cash + investedAll), market: r2(inv - investedPresent), total: r2(cash + inv) };
+}
+function periodBars(series, mode, filter) {
   const t = today(), bars = [];
   if (mode === 'week') {
     const dow = (new Date(toUTC(t)).getUTCDay() + 6) % 7; // Mon=0
     let wkStart = addDays(t, -dow);
     for (let k = 11; k >= 0; k--) {
       const s = addDays(wkStart, -7 * k), e = addDays(s, 6) > t ? t : addDays(s, 6);
-      bars.push({ v: changeBetween(series, addDays(s, -1), e), short: fmtDate(s).split(' ')[0], label: `Week from ${fmtDate(s)}` });
+      bars.push({ v: splitBetween(series, addDays(s, -1), e, filter), short: fmtDate(s).split(' ')[0], label: `Week from ${fmtDate(s)}` });
     }
   } else {
     const [y, m] = t.split('-').map(Number);
@@ -885,7 +933,7 @@ function periodBars(series, mode) {
       const s = `${yy}-${pad(mm)}-01`;
       const nextS = mm === 12 ? `${yy + 1}-01-01` : `${yy}-${pad(mm + 1)}-01`;
       const e = addDays(nextS, -1) > t ? t : addDays(nextS, -1);
-      bars.push({ v: changeBetween(series, addDays(s, -1), e), short: MON[mm - 1][0], label: `${MON[mm - 1]} ${yy}` });
+      bars.push({ v: splitBetween(series, addDays(s, -1), e, filter), short: MON[mm - 1][0], label: `${MON[mm - 1]} ${yy}` });
     }
   }
   return bars;
@@ -917,12 +965,15 @@ function renderOverview() {
   }
   const series = netSeries();
   const last = series[series.length - 1], t = last.date;
-  const w = changeBetween(series, addDays(t, -7), t), m = changeBetween(series, addDays(t, -30), t);
+  const w = splitBetween(series, addDays(t, -7), t), m = splitBetween(series, addDays(t, -30), t);
+  const invAll = hasInvestments();
   const whole = Math.trunc(last.v), pence = Math.abs(last.v - whole).toFixed(2).slice(1);
   const totals = bankTotals();
   const withData = totals.filter(x => x.any);
   if (ui.scope !== 'all' && !withData.some(x => x.b.id === ui.scope)) ui.scope = 'all';
-  const scoped = ui.scope === 'all' ? series : netSeries(a => a.bank === ui.scope);
+  const scopeFilter = ui.scope === 'all' ? null : (a => a.bank === ui.scope);
+  const scoped = ui.scope === 'all' ? series : netSeries(scopeFilter);
+  const invScope = hasInvestments(scopeFilter);
   const scopeName = ui.scope === 'all' ? 'All banks' : bankById(ui.scope).name;
   const pts = scoped.slice(-Math.min(scoped.length, RANGES[ui.range] + 1));
   const sLast = scoped[scoped.length - 1];
@@ -943,7 +994,7 @@ function renderOverview() {
     <div class="card hero">
       <p class="label">You’ve got, across ${withData.length} bank${withData.length === 1 ? '' : 's'}</p>
       <p class="big">${last.v < 0 ? '−' : ''}${GBP0.format(Math.abs(whole))}<small>${pence}</small></p>
-      <div class="pills">${pill(w, 'this week', true) || '<span class="pill">No change yet this week</span>'}${pill(m, 'in 30 days')}</div>
+      <div class="pills">${w ? pill(w.saved, 'saved this week', true) : '<span class="pill">Nothing to compare yet this week</span>'}${m ? pill(m.saved, 'saved in 30 days') : ''}${m && invAll ? pill(m.market, 'market in 30 days') : ''}</div>
     </div>
     <div class="card">
       <div class="rowhead"><h2>Over time</h2>${segHTML('range', Object.keys(RANGES), ui.range)}</div>
@@ -952,11 +1003,11 @@ function renderOverview() {
       <div class="chartbox" id="o-chart"></div>
     </div>
     <div class="card">
-      <div class="rowhead"><h2>${ui.period === 'week' ? 'Weekly' : 'Monthly'} change</h2>${segHTML('period', ['week', 'month'], ui.period, ['Weekly', 'Monthly'])}</div>
+      <div class="rowhead"><h2>Saved each ${ui.period}</h2>${segHTML('period', ['week', 'month'], ui.period, ['Weekly', 'Monthly'])}</div>
       <div class="readout" id="o-bread">${ui.scope === 'all' ? '' : esc(scopeName) + '. '}Tap a bar to see the amount</div>
       <div class="chartbox" id="o-bars"></div>
-      <div class="legend"><span><i style="background:var(--ink)"></i>Grew</span><span><i style="background:var(--shrank)"></i>Shrank</span></div>
-      <p class="muted small">Includes ISA price moves, so it’s not only what you saved.</p>
+      <div class="legend"><span><i style="background:var(--ink)"></i>Saved</span>${invScope ? '<span><i style="background:var(--market)"></i>Market</span>' : ''}<span><i style="background:var(--shrank)"></i>Went down</span></div>
+      ${invScope ? `<p class="muted small">Market is how much your investments grew beyond what you paid in. ${Object.keys(S.tr).length ? '' : 'Record money you move into investments (Update tab) to keep this accurate.'}</p>` : ''}
     </div>
     <div class="section-h"><h2>Your banks</h2><span>Tap a card to open</span></div>
     <div class="wallet" style="height:${(order.length - 1) * STEP + CARD}px">${cards}</div>`;
@@ -966,7 +1017,7 @@ function renderOverview() {
   $$('[data-scope]', el).forEach(b => b.onclick = () => { ui.scope = b.dataset.scope; renderOverview(); });
   $$('[data-bank]', el).forEach(b => b.onclick = () => { ui.bank = b.dataset.bank; renderOverview(); window.scrollTo(0, 0); });
   lineChart($('#o-chart'), pts, $('#o-read'));
-  barChart($('#o-bars'), periodBars(scoped, ui.period), $('#o-bread'));
+  barChart($('#o-bars'), periodBars(scoped, ui.period, scopeFilter), $('#o-bread'), invScope);
 }
 function headerHTML() {
   return `<header class="topbar"><div><h1>Hej Anders</h1><div class="sync" id="sync"><i></i><span></span></div></div>
@@ -988,12 +1039,23 @@ function renderBank(el) {
       <span class="r"><b>${l ? money(l[1].b, a.cur) : '—'}</b>${l && a.cur !== 'GBP' ? `<small>≈ ${GBP.format(toGBP(a, l[1]))}</small>` : ''}</span></div>`;
   }).join('');
   const pts = has ? series.slice(-Math.min(series.length, RANGES[ui.bankRange] + 1)) : [];
+  let invCard = '';
+  if (has && as.some(isInv)) {
+    const first = series[0];
+    const sp = splitBetween(series, first.date, last.date, a => a.bank === b.id);
+    const paid = sp ? sp.saved : 0, growth = sp ? sp.market : 0;
+    invCard = `<div class="card"><h2>Paid in vs growth</h2><p class="sub">Since ${fmtDate(first.date, true)}</p>
+      <div class="kv"><span>Paid in</span><b>${signed(paid)}</b></div>
+      <div class="kv"><span>Market growth</span><b class="${growth < 0 ? 'dn' : ''}">${signed(growth)}</b></div>
+      ${paid === 0 ? '<p class="muted small">No payments in recorded yet. Add them on the Update tab, or they’ll be picked up from your bank statements.</p>' : ''}</div>`;
+  }
   el.innerHTML = `<header class="topbar"><div class="back-wrap"><button class="iconbtn round" data-back aria-label="Back to overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1>${esc(b.name)}</h1></div></header>
     <div class="bigcard" style="background:${b.color};color:${cardInk(b.color)}">
       <span class="wrow ws"><span>${as.length} account${as.length === 1 ? '' : 's'}</span><span>${has ? share.toFixed(0) + '% of total' : ''}</span></span>
       <span><span class="bc-v">${has ? GBP.format(last.v) : 'No balance yet'}</span>${m != null ? `<span class="bc-pill">${signed(m)} in 30 days</span>` : ''}</span>
     </div>
     <div class="card list">${rows}</div>
+    ${invCard}
     ${has ? `<div class="card"><div class="rowhead"><h2>${esc(b.name)} over time</h2>${segHTML('brange', ['1M', '3M', '1Y', 'All'], ui.bankRange)}</div>
       <div class="readout" id="b-read">Latest: <b>${GBP.format(last.v)}</b> on ${fmtDate(last.date)}</div><div class="chartbox" id="b-chart"></div></div>` : ''}
     <div class="duo"><button class="btn" data-bimport>Import statement</button><button class="btn light" data-btype>Type a balance</button></div>`;
@@ -1058,7 +1120,8 @@ function renderUpdate() {
     const l = latest(a.id);
     return `<div class="field"><label for="m-${a.id}" class="n">${esc(a.name)}<span class="hint">${l ? `Last: ${money(l[1].b, a.cur)}, ${fmtDate(l[0])}` : 'No balance yet'}</span></label>
       ${moneyHTML('m-' + a.id, a.cur, `data-acct="${a.id}" aria-label="${esc(b.name + ' ' + a.name)} balance"`, NaN)}
-      ${a.cur !== 'GBP' ? `<div class="conv" id="c-${a.id}"></div>` : ''}</div>`;
+      ${a.cur !== 'GBP' ? `<div class="conv" id="c-${a.id}"></div>` : ''}
+      ${isInv(a) ? `<div class="paidin"><label for="pi-${a.id}">Paid in since last time <span class="hint">optional</span></label>${moneyHTML('pi-' + a.id, a.cur, `data-paid="${a.id}"`, NaN)}</div>` : ''}</div>`;
   }).join('') : ''; }).join('');
   $$('input[data-acct]', box).forEach(inp => {
     const a = acctById(inp.dataset.acct);
@@ -1069,6 +1132,8 @@ function renderUpdate() {
     moneyInput(inp, a.cur);
     if (isFinite(keep[a.id])) inp.setMoney(keep[a.id]);
   });
+  $$('input[data-paid]', box).forEach(inp => moneyInput(inp, acctById(inp.dataset.paid).cur));
+  renderTransferForm();
 }
 $('#m-save').addEventListener('click', async () => {
   const date = $('#m-date').value || today();
@@ -1081,12 +1146,42 @@ $('#m-save').addEventListener('click', async () => {
     S.bal[a.id][date] = { b: Math.round(v * 100) / 100, src: 'manual', ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) };
     changed.push(a.id);
   }
-  if (!changed.length) { toast('Enter at least one balance'); return; }
+  let paidN = 0;
+  for (const inp of $$('input[data-paid]')) {
+    const v = moneyVal(inp); if (!isFinite(v) || !v) continue;
+    const a = acctById(inp.dataset.paid), gbp = Math.round(Math.abs(a.cur === 'GBP' ? v : v * S.meta.dkkRate) * 100) / 100;
+    S.tr['p' + rid()] = v > 0 ? { d: date, from: null, to: a.id, a: gbp, src: 'paidin' } : { d: date, from: a.id, to: null, a: gbp, src: 'paidin' };
+    paidN++; inp.setMoney(NaN);
+  }
+  if (paidN) saveTr();
+  if (!changed.length) { if (paidN) { toast('Payment recorded'); go('overview'); } else toast('Enter at least one balance'); return; }
   changed.forEach(saveBal);
   $$('input[data-acct]').forEach(i => i.setMoney(NaN));
   toast(`Saved ${changed.length} balance${changed.length === 1 ? '' : 's'} for ${fmtDate(date)}`);
   go('overview');
 });
+
+// ---------- TRANSFERS (manual) ----------
+function renderTransferForm() {
+  const box = $('#t-form'); if (!box) return;
+  const opts = sel => `<option value="">Outside the app</option>` + acctOptions(sel);
+  const firstCash = accounts().find(a => !isInv(a)), firstInv = accounts().find(isInv);
+  const keep = { from: $('#t-from')?.value ?? firstCash?.id ?? '', to: $('#t-to')?.value ?? firstInv?.id ?? '', amt: moneyVal($('#t-amt')), date: $('#t-date')?.value || today() };
+  box.innerHTML = `<label class="lbl" for="t-from">From</label><select class="inp" id="t-from">${opts(keep.from)}</select>
+    <label class="lbl" for="t-to">To</label><select class="inp" id="t-to">${opts(keep.to)}</select>
+    <label class="lbl" for="t-amt">Amount</label>${moneyHTML('t-amt', 'GBP', '', NaN)}
+    <label class="lbl" for="t-date">Date</label><input class="inp" type="date" id="t-date" value="${keep.date}" max="${today()}">
+    <button class="btn full" id="t-save" style="margin-top:14px">Save transfer</button>`;
+  moneyInput($('#t-amt'), 'GBP'); if (isFinite(keep.amt)) $('#t-amt').setMoney(keep.amt);
+  $('#t-save').onclick = () => {
+    const from = $('#t-from').value || null, to = $('#t-to').value || null, v = moneyVal($('#t-amt')), d = $('#t-date').value || today();
+    if (!(v > 0)) { toast('Enter the amount you moved'); return; }
+    if (from === to) { toast('Pick two different accounts'); return; }
+    if (!isInv(acctById(from)) && !isInv(acctById(to))) { toast('One side needs to be an investment account'); return; }
+    S.tr['m' + rid()] = { d, from, to, a: Math.round(v * 100) / 100, src: 'manual' };
+    saveTr(); $('#t-amt').setMoney(NaN); toast('Transfer saved');
+  };
+}
 
 // ---------- IMPORT ----------
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
@@ -1153,9 +1248,26 @@ function importPlan() {
   const dupes = txns.filter(t => existing.has(t.id)).length;
   const dates = Object.keys(days).sort();
   const from = r.period?.from || txns[0]?.date, to = r.period?.to || txns[txns.length - 1]?.date;
-  return { a, txns, needsAnchor, anchor, days, dates, dupes, from, to };
+  const trans = isInv(a) ? [] : spotTransfers(txns, a);
+  return { a, txns, needsAnchor, anchor, days, dates, dupes, from, to, trans };
 }
 
+const INVEST_WORDS = /trading ?212|\bt212\b|vanguard|freetrade|hargreaves|aj ?bell|interactive investor|nutmeg|moneybox|wealthify|investengine|invest engine|etoro|degiro|nordnet|saxo|lightyear|plum/i;
+function spotTransfers(txns, a) {
+  const invs = accounts().filter(isInv);
+  if (!invs.length) return [];
+  const byName = invs.map(x => ({ x, re: new RegExp((bankById(x.bank)?.name || '').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*'), 'i') })).filter(o => o.re.source && o.re.source !== '(?:)');
+  const out = [];
+  txns.forEach(t => {
+    if (!t.amount) return;
+    let hit = byName.find(o => o.re.test(t.desc))?.x;
+    if (!hit && invs.length === 1 && INVEST_WORDS.test(t.desc)) hit = invs[0];
+    if (!hit) return;
+    const gbp = Math.round(Math.abs(a.cur === 'GBP' ? t.amount : t.amount * S.meta.dkkRate) * 100) / 100;
+    out.push({ key: 'x' + t.id, d: t.date, desc: t.desc, a: gbp, from: t.amount < 0 ? a.id : hit.id, to: t.amount < 0 ? hit.id : a.id, inv: hit });
+  });
+  return out;
+}
 function importSummary(p) {
   const r = imp;
   const closingLine = r.kind === 'pdf' && isFinite(r.closing) && r.period
@@ -1186,7 +1298,10 @@ function renderImport() {
       </tbody></table></div>${p.txns.length > 5 ? `<p class="muted" style="font-size:.8rem;margin:6px 0 0">Latest 5 of ${p.txns.length}</p>` : ''}` : ''}
     ${r.kind === 'csv' ? `<details style="margin-top:10px" ${p.txns.length ? '' : 'open'}><summary class="linkbtn" style="cursor:pointer">Columns</summary>
       ${colSel('date', 'Date')}${colSel('amount', 'Amount', true)}${colSel('balance', 'Balance', true)}${colSel('desc', 'Description', true)}</details>` : ''}
+    ${p.trans.length ? `<div class="trans"><h3>Money moved to investments</h3><p class="muted small" style="margin:0 0 6px">Tick the ones that went into ${esc(fullName(p.trans[0].inv))}. They’ll count as saved, not market growth.</p>
+      ${p.trans.map(t => `<label class="tick"><input type="checkbox" data-tr="${t.key}" ${imp.skipTr && imp.skipTr[t.key] ? '' : 'checked'}><span>${fmtDate(t.d)}<small>${esc(t.desc)}</small></span><b>${t.to === p.a.id ? '+' : '−'}${GBP.format(t.a)}</b></label>`).join('')}</div>` : ''}
     <div class="actions"><button class="btn ghost" id="imp-cancel">Cancel</button><button class="btn" id="imp-go" ${ok ? '' : 'disabled'}>Import</button></div>`);
+  $$('[data-tr]').forEach(c => c.onchange = () => { imp.skipTr = imp.skipTr || {}; imp.skipTr[c.dataset.tr] = !c.checked; });
   $('#imp-cancel').onclick = closeSheet;
   $('#imp-acct').onchange = e => { imp.acct = e.target.value; renderImport(); };
   const an = $('#imp-anchor');
@@ -1218,7 +1333,9 @@ function doImport() {
   });
   S.meta.imports.unshift({ id, acct: a.id, file: imp.file.slice(0, 120), kind: src, from: p.from || p.dates[0], to: p.to || p.dates[p.dates.length - 1], tx: added, days: p.dates.length, at: today() });
   S.meta.imports = S.meta.imports.slice(0, 200);
-  saveMeta(); saveBal(a.id); touched.forEach(saveTx);
+  let trN = 0;
+  p.trans.forEach(t => { if (imp.skipTr && imp.skipTr[t.key]) return; if (S.tr[t.key]) return; S.tr[t.key] = { d: t.d, from: t.from, to: t.to, a: t.a, src: 'auto', imp: id, n: t.desc.slice(0, 80) }; trN++; });
+  saveMeta(); saveBal(a.id); touched.forEach(saveTx); if (trN) saveTr();
   closeSheet(); imp = null;
   toast(`Imported ${p.dates.length} balance${p.dates.length === 1 ? '' : 's'} into ${fullName(a)}`);
   go('overview');
@@ -1234,8 +1351,10 @@ function undoImport(id, quiet) {
     Object.keys(S.tx[k]).forEach(t => { if (S.tx[k][t].imp === id) { delete S.tx[k][t]; hit = true; } });
     if (hit) touched.push(k);
   });
+  let trHit = false;
+  Object.keys(S.tr).forEach(k => { if (S.tr[k].imp === id) { delete S.tr[k]; trHit = true; } });
   S.meta.imports = S.meta.imports.filter(i => i.id !== id);
-  saveMeta(); balTouched.forEach(saveBal);
+  saveMeta(); balTouched.forEach(saveBal); if (trHit) saveTr();
   touched.forEach(k => { if (Object.keys(S.tx[k]).length) saveTx(k); else { delete S.tx[k]; Store.del('tx-' + k); } });
   if (!quiet) { toast('Import undone'); render(); }
 }
@@ -1256,6 +1375,11 @@ function renderHistory() {
   const ims = S.meta.imports;
   $('#h-imports').innerHTML = ims.length ? ims.slice(0, 40).map(i => `<div class="hist-row"><span class="d">${esc(i.id.startsWith('demo-') ? i.file : fullName(acctById(i.acct)))}<small>${fmtDate(i.from)} to ${fmtDate(i.to)}${i.tx ? `, ${i.tx} transactions` : ''}${i.kind !== 'manual' ? ', ' + i.kind.toUpperCase() : ''}</small></span><span></span>
     <button class="btn ghost small" data-undo="${i.id}">Undo</button></div>`).join('') : `<p class="muted" style="margin:0">Nothing imported yet.</p>`;
+  const trs = trList().reverse();
+  const nm = id => id ? esc(fullName(acctById(id))) : 'Outside the app';
+  $('#h-trans').innerHTML = trs.length ? trs.slice(0, 200).map(t => `<div class="hist-row"><span class="d">${t.src === 'paidin' && !t.from ? `Paid into ${nm(t.to)}` : t.src === 'paidin' ? `Taken out of ${nm(t.from)}` : `${nm(t.from)} → ${nm(t.to)}`}<small>${fmtDate(t.d, true)}, ${t.src === 'auto' ? 'from a statement' : t.src === 'paidin' ? 'typed with a balance' : 'added by hand'}</small></span>
+    <b>${GBP.format(t.a)}</b><button class="iconbtn" data-trdel="${t.id}" aria-label="Delete transfer">${TRASH}</button></div>`).join('') : '<p class="muted" style="margin:0">No transfers recorded yet.</p>';
+  $$('[data-trdel]').forEach(b => b.onclick = () => confirmTap(b, 'Delete', () => { delete S.tr[b.dataset.trdel]; saveTr(); renderHistory(); }));
   $$('[data-undo]').forEach(b => b.onclick = () => confirmTap(b, 'Undo import?', () => undoImport(b.dataset.undo)));
 }
 $('#h-acct').addEventListener('change', renderHistory);
@@ -1265,6 +1389,7 @@ function removeAccount(id) {
   S.meta.accounts = S.meta.accounts.filter(x => x.id !== id);
   S.meta.imports = S.meta.imports.filter(i => i.acct !== id);
   if (S.bal[id]) { delete S.bal[id]; Store.del('bal-' + id); }
+  let trHit = false; Object.keys(S.tr).forEach(k => { if (S.tr[k].from === id || S.tr[k].to === id) { delete S.tr[k]; trHit = true; } }); if (trHit) saveTr();
   Object.keys(S.tx).filter(k => k.startsWith(id + '-')).forEach(k => { delete S.tx[k]; Store.del('tx-' + k); });
 }
 function renderSettings() {
@@ -1275,14 +1400,16 @@ function renderSettings() {
         <button class="iconbtn" data-brm="${b.id}" aria-label="Remove ${esc(b.name)} and its accounts">${TRASH}</button></div>
       ${as.map(a => `<div class="acct-ed">
         <input class="inp" data-name="${a.id}" value="${esc(a.name)}" aria-label="Account name in ${esc(b.name)}" maxlength="40">
-        <select class="inp" data-cur="${a.id}" aria-label="Currency" style="width:auto">${['GBP', 'DKK'].map(c => `<option ${a.cur === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
-        <button class="iconbtn" data-rm="${a.id}" aria-label="Remove ${esc(a.name)}">${TRASH}</button></div>`).join('')}
+        <button class="iconbtn" data-rm="${a.id}" aria-label="Remove ${esc(a.name)}">${TRASH}</button>
+        <div class="acct-opts"><select class="inp" data-kind="${a.id}" aria-label="Account type">${[['bank', 'Cash'], ['investment', 'Investment']].map(([v, l]) => `<option value="${v}" ${(a.kind || 'bank') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <select class="inp" data-cur="${a.id}" aria-label="Currency">${['GBP', 'DKK'].map(c => `<option ${a.cur === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>`).join('')}
       <div class="swatches" role="group" aria-label="Card colour for ${esc(b.name)}">${PALETTE.map(c => `<button data-color="${c}" data-cbank="${b.id}" aria-pressed="${b.color === c}" aria-label="Colour ${c}" style="background:${c}"></button>`).join('')}</div>
       <button class="linkbtn" data-addacct="${b.id}">Add an account to ${esc(b.name)}</button></div>`;
   }).join('');
   $$('[data-bname]').forEach(i => i.onchange = () => { const b = bankById(i.dataset.bname); b.name = i.value.trim() || b.name; saveMeta(); renderSettings(); toast('Saved'); });
   $$('[data-name]').forEach(i => i.onchange = () => { const a = acctById(i.dataset.name); a.name = i.value.trim() || a.name; saveMeta(); toast('Saved'); });
   $$('[data-cur]').forEach(s => s.onchange = () => { const a = acctById(s.dataset.cur); a.cur = s.value; Object.values(S.bal[a.id] || {}).forEach(e => { if (a.cur !== 'GBP' && !e.fx) e.fx = S.meta.dkkRate; }); saveMeta(); saveBal(a.id); toast('Saved'); });
+  $$('[data-kind]').forEach(s => s.onchange = () => { acctById(s.dataset.kind).kind = s.value; saveMeta(); toast('Saved'); });
   $$('[data-rm]').forEach(b => b.onclick = () => {
     const a = acctById(b.dataset.rm);
     confirmTap(b, entries(a.id).length ? 'Delete + data' : 'Remove', () => { removeAccount(a.id); saveMeta(); renderSettings(); });
@@ -1323,7 +1450,7 @@ $('#s-rate').addEventListener('change', e => {
   S.meta.dkkRate = v; S.meta.rateDate = today(); saveMeta(); renderSettings(); toast('Rate updated');
 });
 $('#s-export').addEventListener('click', async () => {
-  const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: S.meta, bal: S.bal, tx: S.tx }, null, 1);
+  const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: S.meta, bal: S.bal, tx: S.tx, tr: S.tr }, null, 1);
   const filename = `savings-tracker-backup-${today()}.json`;
   try {
     const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
@@ -1348,7 +1475,7 @@ $('#s-restore-file').addEventListener('change', async e => {
   $('#r-no').onclick = closeSheet;
   $('#r-yes').onclick = () => {
     const old = Object.keys(docsFrom(S));
-    S = migrate({ meta: b.meta, bal: b.bal || {}, tx: b.tx || {} }); delete S._dirty;
+    S = migrate({ meta: b.meta, bal: b.bal || {}, tx: b.tx || {}, tr: b.tr || {} }); delete S._dirty;
     const docs = docsFrom(S);
     old.filter(id => !(id in docs)).forEach(id => Store.del(id));
     for (const id in docs) Store.put(id, docs[id]);
