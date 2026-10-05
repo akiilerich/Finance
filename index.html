@@ -107,18 +107,25 @@ button{cursor:pointer}
 /* Forms */
 .grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
 .grp i{width:12px;height:12px;border-radius:4px;display:inline-block}
-.field{display:grid;grid-template-columns:1fr 46%;align-items:center;gap:10px;padding:7px 0}
+.field{display:grid;grid-template-columns:1fr;gap:6px;padding:8px 0}
+.field .n{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.field .money input{font-size:1.15rem}
 .field .n{font-weight:700}
-.field .hint{font-size:.78rem;color:var(--muted);font-weight:600;display:block}
-.money{display:flex;align-items:center;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:0 12px;min-height:48px}
+.field .hint{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right}
+.money{display:flex;align-items:center;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:0 10px;min-height:48px}
 .money:focus-within{border-color:var(--ink);background:var(--surface)}
-.money span{color:var(--muted);font-weight:700;margin-right:6px;font-size:.92rem}
+.money span{color:var(--muted);font-weight:700;margin-right:4px;font-size:.92rem}
+.money .pm{border:0;background:var(--surface);color:var(--muted);font-weight:800;font-size:.95rem;width:30px;height:30px;border-radius:9px;margin:0 4px 0 -6px;flex:none;display:grid;place-items:center;line-height:1}
+.money.neg .pm{background:var(--down-soft);color:var(--down)}
+.money.neg input{color:var(--down)}
+.money input{caret-color:transparent}
+.money:focus-within{box-shadow:0 0 0 3px var(--accent)}
 .money input::placeholder{font-weight:600;font-size:.92rem;color:var(--muted);opacity:.75}
 .money input{border:0;background:transparent;width:100%;min-width:0;font-size:1.05rem;font-weight:700;text-align:right;padding:10px 0;outline:none}
 .inp,select.inp{width:100%;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:10px 12px;min-height:48px;font-size:1rem}
 .inp:focus{border-color:var(--ink);outline:none;background:var(--surface)}
 label.lbl{display:block;font-size:.86rem;color:var(--muted);font-weight:700;margin:12px 0 6px}
-.conv{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right;grid-column:2;margin-top:-4px}
+.conv{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right;margin-top:-2px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;padding:13px 20px;font-weight:800;font-size:1rem;min-height:52px;background:var(--ink);color:var(--on-ink)}
 .btn.small{padding:0 18px;min-height:44px;font-size:.92rem;border-radius:999px}
 .btn.full{width:100%}
@@ -997,29 +1004,78 @@ function renderBank(el) {
   if (has) lineChart($('#b-chart'), pts, $('#b-read'), b.color);
 }
 
+// ---------- MONEY INPUT ----------
+// Card-machine style: digits fill in from the right (5 → 0.05, 55 → 0.55, 557 → 5.57),
+// with thousands separators as you type. ± flips the sign for overdrawn balances.
+const PLAIN = { GBP: new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), DKK: new Intl.NumberFormat('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) };
+const plain = (v, cur) => (v < 0 ? '−' : '') + (PLAIN[cur] || PLAIN.GBP).format(Math.abs(v));
+const moneyVal = inp => inp && inp.dataset.v !== undefined && inp.dataset.v !== '' ? +inp.dataset.v : NaN;
+function moneyHTML(id, cur, attrs, placeholderVal) {
+  return `<div class="money"><button type="button" class="pm" data-pm="${id}" aria-label="Switch between positive and negative" aria-pressed="false">±</button><span>${cur === 'DKK' ? 'kr' : '£'}</span><input id="${id}" ${attrs || ''} type="text" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="${isFinite(placeholderVal) ? plain(placeholderVal, cur) : plain(0, cur)}"></div>`;
+}
+function moneyInput(inp, cur) {
+  const st = { d: '', neg: false };
+  const box = inp.closest('.money'), pm = box && $('.pm', box);
+  const caretEnd = () => { if (document.activeElement !== inp) return; const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} };
+  const render = () => {
+    const cents = st.d ? +st.d : 0;
+    inp.value = st.d ? plain((st.neg ? -1 : 1) * cents / 100, cur) : (st.neg ? '−' : '');
+    inp.dataset.v = st.d ? String((st.neg ? -1 : 1) * cents / 100) : '';
+    if (box) box.classList.toggle('neg', st.neg);
+    if (pm) pm.setAttribute('aria-pressed', st.neg);
+    requestAnimationFrame(caretEnd);
+    inp.dispatchEvent(new CustomEvent('money'));
+  };
+  inp.setMoney = v => {
+    if (!isFinite(v)) { st.d = ''; st.neg = false; }
+    else { st.neg = v < 0; st.d = String(Math.round(Math.abs(v) * 100)).replace(/^0+/, ''); }
+    render();
+  };
+  inp.addEventListener('input', e => {
+    if (e.inputType === 'insertFromPaste') return;
+    const raw = inp.value;
+    if (e.data && /[-−]/.test(e.data)) st.neg = !st.neg;
+    st.d = raw.replace(/\D/g, '').replace(/^0+/, '').slice(0, 12);
+    if (!raw.replace(/[-−]/g, '')) st.neg = st.neg && raw !== '';
+    render();
+  });
+  inp.addEventListener('paste', e => {
+    const v = Core.parseNum((e.clipboardData || window.clipboardData).getData('text'));
+    if (!isFinite(v)) return;
+    e.preventDefault(); inp.setMoney(v);
+  });
+  ['focus', 'click', 'keyup'].forEach(t => inp.addEventListener(t, () => requestAnimationFrame(caretEnd)));
+  if (pm) pm.addEventListener('click', () => { st.neg = !st.neg; render(); });
+  return inp;
+}
+
 // ---------- UPDATE (manual) ----------
 function renderUpdate() {
   const d = $('#m-date'); if (!d.value) d.value = today(); d.max = today();
   const box = $('#m-fields');
-  const keep = {}; $$('input[data-acct]', box).forEach(i => keep[i.dataset.acct] = i.value);
+  const keep = {}; $$('input[data-acct]', box).forEach(i => keep[i.dataset.acct] = moneyVal(i));
   box.innerHTML = banks().map(b => { const as = accountsIn(b.id); return as.length ? `<h3 class="grp"><i style="background:${b.color}"></i>${esc(b.name)}</h3>` + as.map(a => {
     const l = latest(a.id);
     return `<div class="field"><label for="m-${a.id}" class="n">${esc(a.name)}<span class="hint">${l ? `Last: ${money(l[1].b, a.cur)}, ${fmtDate(l[0])}` : 'No balance yet'}</span></label>
-      <div class="money"><span>${a.cur === 'DKK' ? 'kr' : '£'}</span><input id="m-${a.id}" data-acct="${a.id}" inputmode="decimal" autocomplete="off" value="${esc(keep[a.id] || '')}" placeholder="${l ? l[1].b.toFixed(2) : '0.00'}"></div>
+      ${moneyHTML('m-' + a.id, a.cur, `data-acct="${a.id}" aria-label="${esc(b.name + ' ' + a.name)} balance"`, NaN)}
       ${a.cur !== 'GBP' ? `<div class="conv" id="c-${a.id}"></div>` : ''}</div>`;
   }).join('') : ''; }).join('');
-  $$('input[data-acct]', box).forEach(inp => inp.addEventListener('input', () => {
-    const c = $('#c-' + inp.dataset.acct); if (!c) return;
-    const v = Core.parseNum(inp.value); c.textContent = isFinite(v) ? '≈ ' + GBP.format(v * S.meta.dkkRate) : '';
-  }));
+  $$('input[data-acct]', box).forEach(inp => {
+    const a = acctById(inp.dataset.acct);
+    inp.addEventListener('money', () => {
+      const c = $('#c-' + a.id); if (!c) return;
+      const v = moneyVal(inp); c.textContent = isFinite(v) ? '≈ ' + GBP.format(v * S.meta.dkkRate) : '';
+    });
+    moneyInput(inp, a.cur);
+    if (isFinite(keep[a.id])) inp.setMoney(keep[a.id]);
+  });
 }
 $('#m-save').addEventListener('click', async () => {
   const date = $('#m-date').value || today();
   const changed = [];
   for (const inp of $$('input[data-acct]')) {
-    if (!inp.value.trim()) continue;
-    const v = Core.parseNum(inp.value);
-    if (!isFinite(v)) { inp.focus(); toast(`“${inp.value}” isn’t a number`); return; }
+    const v = moneyVal(inp);
+    if (!isFinite(v)) continue;
     const a = acctById(inp.dataset.acct);
     S.bal[a.id] = S.bal[a.id] || {};
     S.bal[a.id][date] = { b: Math.round(v * 100) / 100, src: 'manual', ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) };
@@ -1027,7 +1083,7 @@ $('#m-save').addEventListener('click', async () => {
   }
   if (!changed.length) { toast('Enter at least one balance'); return; }
   changed.forEach(saveBal);
-  $$('input[data-acct]').forEach(i => i.value = '');
+  $$('input[data-acct]').forEach(i => i.setMoney(NaN));
   toast(`Saved ${changed.length} balance${changed.length === 1 ? '' : 's'} for ${fmtDate(date)}`);
   go('overview');
 });
@@ -1100,12 +1156,19 @@ function importPlan() {
   return { a, txns, needsAnchor, anchor, days, dates, dupes, from, to };
 }
 
+function importSummary(p) {
+  const r = imp;
+  const closingLine = r.kind === 'pdf' && isFinite(r.closing) && r.period
+    ? `<div class="kv"><span>Closing balance</span><b>${money(r.closing + (r.pots || 0), p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(r.period.to, true)}${r.pots ? `, includes ${money(r.pots, p.a.cur)} in Pots` : ''}</span></b></div>` : (p.dates.length ? `<div class="kv"><span>Closing balance</span><b>${money(p.days[p.dates[p.dates.length - 1]], p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(p.dates[p.dates.length - 1], true)}</span></b></div>` : '');
+  return `${p.from ? `<div class="kv"><span>Period</span><b>${fmtDate(p.from)} to ${fmtDate(p.to, true)}</b></div>` : ''}
+      <div class="kv"><span>Transactions</span><b>${p.txns.length}${p.dupes ? ` <span class="muted" style="font-weight:400">(${p.dupes} already imported)</span>` : ''}</b></div>
+      ${closingLine}
+      <div class="kv"><span>Daily balances added</span><b>${p.dates.length}</b></div>`;
+}
 function renderImport() {
   const r = imp, p = importPlan();
   const lastTx = p.txns[p.txns.length - 1];
   const colSel = (key, label, allowNone) => `<label class="lbl" for="map-${key}">${label}</label><select class="inp" id="map-${key}" data-map="${key}">${allowNone ? '<option value="-1">None</option>' : ''}${r.header.map((h, i) => `<option value="${i}" ${r.map[key] === i ? 'selected' : ''}>${esc(h || 'Column ' + (i + 1))}</option>`).join('')}</select>`;
-  const closingLine = r.kind === 'pdf' && isFinite(r.closing) && r.period
-    ? `<div class="kv"><span>Closing balance</span><b>${money(r.closing + (r.pots || 0), p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(r.period.to, true)}${r.pots ? `, includes ${money(r.pots, p.a.cur)} in Pots` : ''}</span></b></div>` : (p.dates.length ? `<div class="kv"><span>Closing balance</span><b>${money(p.days[p.dates[p.dates.length - 1]], p.a.cur)}<br><span class="muted" style="font-weight:400;font-size:.82rem">${fmtDate(p.dates[p.dates.length - 1], true)}</span></b></div>` : '');
   const ok = p.dates.length > 0 || p.needsAnchor;
   openSheet(`
     <h2 id="sheet-title">Import statement</h2>
@@ -1114,12 +1177,9 @@ function renderImport() {
     <select class="inp" id="imp-acct">${acctOptions(r.acct)}</select>
     ${!p.txns.length ? `<div class="note err">No transactions found${r.kind === 'csv' ? '. Check the columns below match your file.' : ' in this PDF. Try the CSV export from the same bank.'}</div>` : ''}
     ${p.needsAnchor ? `<div class="note warn">This file lists transactions but not your balance. Type the balance after the last transaction${lastTx ? ` (${fmtDate(lastTx.date)}, ${esc(lastTx.desc || 'last item')})` : ''}. If nothing has happened since, that’s your current balance in the app.</div>
-      <div class="money"><span>${p.a.cur === 'DKK' ? 'kr' : '£'}</span><input id="imp-anchor" inputmode="decimal" autocomplete="off" placeholder="Balance after last transaction" value="${esc(r.anchorText || '')}"></div>` : ''}
-    <div style="margin-top:12px">
-      ${p.from ? `<div class="kv"><span>Period</span><b>${fmtDate(p.from)} to ${fmtDate(p.to, true)}</b></div>` : ''}
-      <div class="kv"><span>Transactions</span><b>${p.txns.length}${p.dupes ? ` <span class="muted" style="font-weight:400">(${p.dupes} already imported)</span>` : ''}</b></div>
-      ${closingLine}
-      <div class="kv"><span>Daily balances added</span><b>${p.dates.length}</b></div>
+      ${moneyHTML('imp-anchor', p.a.cur, 'aria-label="Balance after the last transaction"', NaN)}` : ''}
+    <div style="margin-top:12px" id="imp-sum">
+      ${importSummary(p)}
     </div>
     ${p.txns.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead><tbody>
       ${p.txns.slice(-5).reverse().map(t => `<tr><td>${fmtDate(t.date)}</td><td class="desc">${esc(t.desc)}</td><td class="num ${t.amount > 0 ? 'up' : ''}">${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}</td><td class="num">${isFinite(t.balance) ? t.balance.toFixed(2) : '—'}</td></tr>`).join('')}
@@ -1130,9 +1190,15 @@ function renderImport() {
   $('#imp-cancel').onclick = closeSheet;
   $('#imp-acct').onchange = e => { imp.acct = e.target.value; renderImport(); };
   const an = $('#imp-anchor');
-  if (an) { an.oninput = () => { imp.anchorText = an.value; }; an.onchange = () => { renderImport(); setTimeout(() => $('#imp-go')?.focus(), 0); }; an.onkeydown = e => { if (e.key === 'Enter') an.blur(); }; }
+  if (an) {
+    moneyInput(an, p.a.cur);
+    if (isFinite(Core.parseNum(r.anchorText))) an.setMoney(Core.parseNum(r.anchorText));
+    // refresh just the summary, so the keyboard stays open while typing
+    an.addEventListener('money', () => { imp.anchorText = an.dataset.v; const t = document.createElement('div'); t.innerHTML = importSummary(importPlan()); $('#imp-sum').innerHTML = t.innerHTML; });
+    an.onkeydown = e => { if (e.key === 'Enter') an.blur(); };
+  }
   $$('[data-map]').forEach(s => s.onchange = () => { imp.map[s.dataset.map] = +s.value; imp.txns = Core.buildTxns(imp.data, imp.map); renderImport(); });
-  $('#imp-go').onclick = () => { if (an) imp.anchorText = an.value; doImport(); };
+  $('#imp-go').onclick = () => { if (an) imp.anchorText = an.dataset.v; doImport(); };
 }
 
 function doImport() {
