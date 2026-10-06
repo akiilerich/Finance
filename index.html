@@ -114,6 +114,7 @@ button{cursor:pointer}
 .tick span{font-weight:700;font-size:.9rem}.tick small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
 .acct-ed{grid-template-columns:1fr auto!important}
 .acct-opts{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:8px}
+.ver{text-align:center;font-size:.74rem;font-weight:600;color:var(--muted);opacity:.8;margin:18px 0 0}
 /* Forms */
 .grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
 .grp i{width:12px;height:12px;border-radius:4px;display:inline-block}
@@ -300,6 +301,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
       </div>
     </div>
   </section>
+  <p class="ver" id="app-ver"></p>
 </div>
 
 <nav class="tabs" aria-label="Sections"><div class="in">
@@ -652,6 +654,8 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
 const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
 const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
+const APP_VERSION = '2.2.1';
+document.getElementById('app-ver').textContent = `SVJ v${APP_VERSION}`;
 const DEFAULT_BANKS = [
   { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
   { id: 'b-monzo', name: 'Monzo', color: '#1D1B2E' },
