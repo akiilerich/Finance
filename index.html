@@ -277,6 +277,11 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
       <button class="btn danger small" id="s-demo-rm">Remove demo data</button>
     </div>
     <div class="card">
+      <h2>Your name</h2>
+      <p class="sub">Shown in the greeting on the Overview. Leave it blank for just “Hej”.</p>
+      <input class="inp" id="s-name" maxlength="30" autocomplete="given-name" aria-label="Your name">
+    </div>
+    <div class="card">
       <h2>Banks and accounts</h2>
       <p class="sub">Each bank holds one or more accounts. Rename them to match yours.</p>
       <div id="s-accts"></div>
@@ -285,6 +290,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
     <div class="card">
       <h2>Danish kroner</h2>
       <p class="sub">Used to convert DKK balances into pounds. Each balance keeps the rate from the day you saved it.</p>
+      <label class="tick" id="s-auto-wrap" style="border:0;padding:0 0 10px"><input type="checkbox" id="s-auto"><span>Update automatically<small>Turns off if you type a rate yourself</small></span><span></span></label>
       <div class="field" style="border:0;padding-top:0">
         <span class="n">1 DKK in pounds</span>
         <div class="money"><span>£</span><input id="s-rate" inputmode="decimal" aria-label="Pounds per Danish krone"></div>
@@ -654,7 +660,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
 const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
 const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.3.0';
 document.getElementById('app-ver').textContent = `SVJ v${APP_VERSION}`;
 const DEFAULT_BANKS = [
   { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
@@ -671,7 +677,7 @@ const DEFAULT_ACCOUNTS = [
   { id: 'dk', bank: 'b-dk', name: 'Account', cur: 'DKK', kind: 'bank' },
   { id: 'isa', bank: 'b-t212', name: 'Stocks & Shares ISA', cur: 'GBP', kind: 'investment' },
 ];
-const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', imports: [] }, bal: {}, tx: {}, tr: {} });
+const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', rateAuto: true, name: '', imports: [] }, bal: {}, tx: {}, tr: {} });
 // v1 had a flat list of accounts: give each one a bank, keeping account ids so history stays attached.
 const NAMED_COLORS = { chase: '#0F7C6E', monzo: '#1D1B2E', 'uk bank 3': '#E8B23A', 'danish bank': '#D9534F', 'trading 212': '#3B3FB6' };
 function giveColors(m) {
@@ -682,6 +688,8 @@ function giveColors(m) {
 function migrate(st) {
   st.tr = st.tr || {};
   const m = st.meta;
+  if (m.name === undefined) { m.name = Object.values(st.bal || {}).some(x => Object.keys(x).length) ? 'Anders' : ''; st._dirty = true; }
+  if (m.rateAuto === undefined) { m.rateAuto = true; st._dirty = true; }
   if (m.banks && m.accounts.every(a => a.bank)) { if (giveColors(m)) st._dirty = true; return st; }
   m.banks = m.banks || [];
   const known = { chase: ['Chase', 'Current account'], monzo: ['Monzo', 'Current account'], uk3: ['UK bank 3', 'Account'], dk: ['Danish bank', 'Account'], isa: ['Trading 212', 'Stocks & Shares ISA'] };
@@ -1024,7 +1032,7 @@ function renderOverview() {
   barChart($('#o-bars'), periodBars(scoped, ui.period, scopeFilter), $('#o-bread'), invScope);
 }
 function headerHTML() {
-  return `<header class="topbar"><div><h1>Hej Anders</h1><div class="sync" id="sync"><i></i><span></span></div></div>
+  return `<header class="topbar"><div><h1>Hej${S.meta.name ? ' ' + esc(S.meta.name) : ''}</h1><div class="sync" id="sync"><i></i><span></span></div></div>
     <button class="btn small" data-hupdate>+ Update</button></header>`;
 }
 function wireHeader(el) { $('[data-hupdate]', el).onclick = () => go('update'); setSync(); }
@@ -1434,8 +1442,15 @@ function renderSettings() {
   });
   const demo = $('#s-demo');
   demo.hidden = !demoImports().length;
+  const nm = $('#s-name'); if (document.activeElement !== nm) nm.value = S.meta.name || '';
   const r = $('#s-rate'); if (document.activeElement !== r) r.value = S.meta.dkkRate;
-  $('#s-rate-meta').textContent = `Set ${fmtDate(S.meta.rateDate, true)}. 1 GBP ≈ ${(1 / S.meta.dkkRate).toFixed(2)} DKK. Update it now and then from your bank app.`;
+  const auto = CAN_FETCH_RATE && S.meta.rateAuto;
+  $('#s-auto-wrap').hidden = !CAN_FETCH_RATE;
+  $('#s-auto').checked = auto;
+  r.readOnly = auto;
+  $('#s-rate-meta').textContent = (auto
+    ? `European Central Bank rate from ${fmtDate(S.meta.rateDate, true)}, checked once a day.`
+    : `Set ${fmtDate(S.meta.rateDate, true)}. Update it now and then from your bank app.`) + ` 1 GBP ≈ ${(1 / S.meta.dkkRate).toFixed(2)} DKK.`;
   setSync();
 }
 $('#s-add').addEventListener('click', () => {
@@ -1448,10 +1463,15 @@ $('#s-demo-rm').addEventListener('click', e => confirmTap(e.currentTarget, 'Tap 
   demoImports().forEach(i => undoImport(i.id, true));
   toast('Demo data removed'); render();
 }));
+$('#s-name').addEventListener('change', e => { S.meta.name = e.target.value.trim().slice(0, 30); saveMeta(); toast('Saved'); });
+$('#s-auto').addEventListener('change', async e => {
+  S.meta.rateAuto = e.target.checked; saveMeta(); renderSettings();
+  if (e.target.checked) { const ok = await refreshRate(true); toast(ok ? 'Rate updated' : 'Couldn’t reach the rate service. It’ll try again later.'); }
+});
 $('#s-rate').addEventListener('change', e => {
-  const v = Core.parseNum(e.target.value);
+  const v = parseFloat(String(e.target.value).replace(',', '.'));
   if (!(v > 0 && v < 10)) { toast('Enter the rate as pounds per krone, e.g. 0.1147'); return; }
-  S.meta.dkkRate = v; S.meta.rateDate = today(); saveMeta(); renderSettings(); toast('Rate updated');
+  S.meta.dkkRate = v; S.meta.rateDate = today(); S.meta.rateAuto = false; saveMeta(); renderSettings(); toast('Rate updated');
 });
 $('#s-export').addEventListener('click', async () => {
   const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: S.meta, bal: S.bal, tx: S.tx, tr: S.tr }, null, 1);
@@ -1493,6 +1513,35 @@ $('#s-wipe').addEventListener('click', e => confirmTap(e.currentTarget, 'Tap aga
   toast('All data deleted'); go('overview');
 }));
 
+// ---------- DKK rate ----------
+// The installed app fetches European Central Bank rates once a day (free, no account needed).
+// Pages hosted inside Claude can't reach other websites, so there the rate stays manual.
+const CAN_FETCH_RATE = !window.claude;
+const RATE_URLS = ['https://api.frankfurter.dev/v1/latest?base=DKK&symbols=GBP', 'https://api.frankfurter.app/latest?from=DKK&to=GBP'];
+let rateBusy = false;
+async function refreshRate(force) {
+  const m = S.meta;
+  if (!CAN_FETCH_RATE || !m.rateAuto || rateBusy || !navigator.onLine) return false;
+  if (!force && m.rateChecked === today()) return false;
+  rateBusy = true;
+  try {
+    for (const url of RATE_URLS) {
+      try {
+        const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), 7000);
+        const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal }); clearTimeout(tm);
+        if (!r.ok) continue;
+        const j = await r.json(), v = j && j.rates && j.rates.GBP;
+        if (!(v > 0 && v < 10)) continue;
+        m.dkkRate = Math.round(v * 1e5) / 1e5; m.rateDate = j.date || today(); m.rateChecked = today();
+        saveMeta(); render();
+        return true;
+      } catch (e) {}
+    }
+    return false;
+  } finally { rateBusy = false; }
+}
+window.addEventListener('online', () => refreshRate());
+
 // ---------- boot ----------
 function render() {
   if (tab === 'overview') renderOverview();
@@ -1518,7 +1567,9 @@ render();
       } else { S = fresh(); S.meta.rateDate = today(); saveMeta(); }
     } catch (e) { Store.failed = true; }
   } else Store.cache();
+  if (S._dirty) { delete S._dirty; saveMeta(); }
   render();
+  refreshRate();
 })();
 })();
 </script></body></html>
