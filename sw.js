@@ -1,5 +1,5 @@
 // Offline support: the app shell is cached on install; fonts and the PDF reader are cached the first time they load.
-const VERSION = 'savings-tracker-v2';
+const VERSION = 'savings-tracker-v3';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -17,7 +17,11 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match('./index.html')));
     return;
   }
-  // Everything else (icons, fonts, PDF reader): cache first.
+  // Only the app's own files, fonts and the PDF reader are cached; anything else (like exchange rates) always goes to the network.
+  const url = new URL(req.url);
+  const cacheable = url.origin === location.origin || /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com)$/.test(url.hostname);
+  if (!cacheable) return;
+  // Cacheable files: cache first.
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
     if (res && (res.ok || res.type === 'opaque')) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
     return res;
