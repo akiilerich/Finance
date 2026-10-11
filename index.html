@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#E7ECFA">
+<meta name="theme-color" content="#E7ECFA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121124" media="(prefers-color-scheme: dark)">
 <title>SVJ</title>
 <meta name="application-name" content="SVJ">
 <meta name="apple-mobile-web-app-title" content="SVJ">
@@ -114,6 +115,10 @@ button{cursor:pointer}
 .tick span{font-weight:700;font-size:.9rem}.tick small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
 .acct-ed{grid-template-columns:1fr auto!important}
 .acct-opts{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:8px}
+.nudge{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--brass-soft)}
+.nudge b{display:block;font-size:.98rem}
+.nudge p{margin:2px 0 0;font-size:.84rem;color:var(--ink);opacity:.8}
+.nudge .btn{flex:none}
 .ver{text-align:center;font-size:.74rem;font-weight:600;color:var(--muted);opacity:.8;margin:18px 0 0}
 /* Forms */
 .grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
@@ -129,7 +134,7 @@ button{cursor:pointer}
 .money .pm{border:0;background:var(--surface);color:var(--muted);font-weight:800;font-size:.95rem;width:30px;height:30px;border-radius:9px;margin:0 4px 0 -6px;flex:none;display:grid;place-items:center;line-height:1}
 .money.neg .pm{background:var(--down-soft);color:var(--down)}
 .money.neg input{color:var(--down)}
-.money input{caret-color:transparent}
+.money input.cm{caret-color:transparent}
 .money:focus-within{box-shadow:0 0 0 3px var(--accent)}
 .money input::placeholder{font-weight:600;font-size:.92rem;color:var(--muted);opacity:.75}
 .money input{border:0;background:transparent;width:100%;min-width:0;font-size:1.05rem;font-weight:700;text-align:right;padding:10px 0;outline:none}
@@ -300,6 +305,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
     <div class="card">
       <h2>Your data</h2>
       <p class="sub" id="s-store"></p>
+      <p class="sub" id="s-last" style="margin-top:-6px;font-weight:700"></p>
       <div class="actions" style="flex-wrap:wrap">
         <button class="btn ghost small" id="s-export">Download a backup</button>
         <label class="btn ghost small" style="cursor:pointer">Restore a backup<input type="file" id="s-restore-file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0"></label>
@@ -660,7 +666,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
 const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
 const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 document.getElementById('app-ver').textContent = `SVJ v${APP_VERSION}`;
 const DEFAULT_BANKS = [
   { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
@@ -677,17 +683,23 @@ const DEFAULT_ACCOUNTS = [
   { id: 'dk', bank: 'b-dk', name: 'Account', cur: 'DKK', kind: 'bank' },
   { id: 'isa', bank: 'b-t212', name: 'Stocks & Shares ISA', cur: 'GBP', kind: 'investment' },
 ];
-const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', rateAuto: true, name: '', imports: [] }, bal: {}, tx: {}, tr: {} });
+const fresh = () => ({ meta: { v: 2, banks: DEFAULT_BANKS.map(b => ({ ...b })), accounts: DEFAULT_ACCOUNTS.map(a => ({ ...a })), dkkRate: 0.1147, rateDate: '2026-10-04', rateAuto: true, name: '', since: today(), imports: [] }, bal: {}, tx: {}, tr: {} });
 // v1 had a flat list of accounts: give each one a bank, keeping account ids so history stays attached.
 const NAMED_COLORS = { chase: '#0F7C6E', monzo: '#1D1B2E', 'uk bank 3': '#E8B23A', 'danish bank': '#D9534F', 'trading 212': '#3B3FB6' };
+const HEX = /^#[0-9a-f]{6}$/i;
 function giveColors(m) {
   let changed = false;
-  m.banks.forEach((b, i) => { if (!b.color) { b.color = NAMED_COLORS[b.name.toLowerCase()] || PALETTE[i % PALETTE.length]; changed = true; } });
+  m.banks.forEach((b, i) => { if (!HEX.test(b.color || '')) { b.color = NAMED_COLORS[String(b.name).toLowerCase()] || PALETTE[i % PALETTE.length]; changed = true; } });
   return changed;
 }
 function migrate(st) {
-  st.tr = st.tr || {};
+  st.bal = st.bal || {}; st.tx = st.tx || {}; st.tr = st.tr || {};
   const m = st.meta;
+  // Fields a hand-made or very old backup might lack.
+  if (!Array.isArray(m.imports)) { m.imports = []; st._dirty = true; }
+  if (!(m.dkkRate > 0)) { m.dkkRate = 0.1147; st._dirty = true; }
+  if (!m.rateDate) { m.rateDate = today(); st._dirty = true; }
+  if (!m.since) { m.since = today(); st._dirty = true; } // first day on this version, for the backup reminder
   if (m.name === undefined) { m.name = Object.values(st.bal || {}).some(x => Object.keys(x).length) ? 'Anders' : ''; st._dirty = true; }
   if (m.rateAuto === undefined) { m.rateAuto = true; st._dirty = true; }
   if (m.banks && m.accounts.every(a => a.bank)) { if (giveColors(m)) st._dirty = true; return st; }
@@ -710,9 +722,22 @@ let S = fresh();
 // ---------- storage ----------
 const CACHE = 'savings-tracker-cache-v1';
 const Store = {
-  mode: 'boot', db: null, uid: null, queues: {}, failed: false,
+  mode: 'boot', db: null, uid: null, queues: {}, failed: false, cacheDue: false, cacheWarned: false,
   col() { return this.db.collection('data/users/' + this.uid); },
-  cache() { try { localStorage.setItem(CACHE, JSON.stringify({ uid: this.uid, S })); } catch (e) {} },
+  // One import saves many documents; write the phone copy once, after the current task, not once per document.
+  cache() {
+    if (this.cacheDue) return;
+    this.cacheDue = true;
+    queueMicrotask(() => { this.cacheDue = false; this.writeCache(); });
+  },
+  writeCache() {
+    try { localStorage.setItem(CACHE, JSON.stringify({ uid: this.uid, S })); this.cacheWarned = false; }
+    catch (e) {
+      if (this.mode === 'cloud' || this.cacheWarned) return;
+      this.cacheWarned = true;
+      toast('Couldn’t save on this phone. Storage may be full. Download a backup in Settings.');
+    }
+  },
   readCache() { try { const c = JSON.parse(localStorage.getItem(CACHE) || 'null'); return c && c.S ? c : null; } catch (e) { return null; } },
   async connect() {
     try {
@@ -819,10 +844,51 @@ const changeBetween = (series, d0, d1) => { const a = pointOn(series, d0), b = p
 
 // ---------- UI basics ----------
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2800); }
-function openSheet(html) { $('#sheet-body').innerHTML = html; $('#sheet').classList.add('on'); $('#sheet-bg').classList.add('on'); $('#sheet').scrollTop = 0; }
-function closeSheet() { $('#sheet').classList.remove('on'); $('#sheet-bg').classList.remove('on'); $('#sheet-body').innerHTML = ''; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), Math.max(2800, msg.length * 55)); }
+const sheetOpen = () => $('#sheet').classList.contains('on');
+let sheetReturn = null;
+function openSheet(html) {
+  if (!sheetOpen()) sheetReturn = document.activeElement;
+  $('#sheet-body').innerHTML = html; $('#sheet').classList.add('on'); $('#sheet-bg').classList.add('on'); $('#sheet').scrollTop = 0;
+  const h = $('#sheet-title'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+  Nav.sync();
+}
+function closeSheet() {
+  const was = sheetOpen();
+  $('#sheet').classList.remove('on'); $('#sheet-bg').classList.remove('on'); $('#sheet-body').innerHTML = '';
+  if (was && sheetReturn && sheetReturn.isConnected) sheetReturn.focus({ preventScroll: true });
+  sheetReturn = null;
+  Nav.sync();
+}
 $('#sheet-bg').addEventListener('click', closeSheet);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetOpen()) closeSheet(); });
+
+// Phone back button: closes the sheet, then the bank page, then goes back to Overview.
+// Only from the Overview does back leave the app. Each open layer holds one history entry;
+// sync() adds or removes entries to match what's on screen.
+const Nav = {
+  on: !window.claude && !!(history && history.pushState), have: 0, ignore: 0, due: false,
+  want() { return (sheetOpen() ? 1 : 0) + (tab !== 'overview' || ui.bank ? 1 : 0); },
+  sync() {
+    if (!this.on || this.due) return;
+    this.due = true;
+    setTimeout(() => {
+      this.due = false;
+      const w = this.want();
+      while (this.have < w) { history.pushState({ svj: 1 }, ''); this.have++; }
+      if (this.have > w) { this.ignore++; history.go(w - this.have); this.have = w; }
+    }, 0);
+  },
+};
+window.addEventListener('popstate', () => {
+  if (!Nav.on) return;
+  if (Nav.ignore) { Nav.ignore--; return; }
+  Nav.have = Math.max(0, Nav.have - 1);
+  if (sheetOpen()) closeSheet();
+  else if (ui.bank) { ui.bank = null; renderOverview(); window.scrollTo(0, 0); }
+  else if (tab !== 'overview') go('overview');
+  Nav.sync();
+});
 
 let tab = 'overview';
 function go(t) {
@@ -832,6 +898,7 @@ function go(t) {
   $$('nav.tabs button').forEach(b => b.dataset.tab === t ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   render();
   window.scrollTo(0, 0);
+  Nav.sync();
 }
 $$('nav.tabs button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
 
@@ -872,9 +939,17 @@ function lineChart(box, pts, readout, color) {
   const reset = () => { cur.style.display = 'none'; readout.innerHTML = readout.dataset.def; };
   readout.dataset.def = readout.innerHTML;
   const at = e => { const r = svg.getBoundingClientRect(); const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); show(Math.round(f * (pts.length - 1))); };
-  svg.addEventListener('pointerdown', at); svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) at(e); });
-  svg.addEventListener('pointerleave', reset); svg.addEventListener('pointercancel', reset);
-  svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
+  chartTouch(svg, at, reset);
+}
+// Mouse: follow the pointer. Touch: the reading stays for a couple of seconds after lifting the finger
+// (phones send pointerleave straight after pointerup, which used to clear it at once).
+function chartTouch(svg, show, reset) {
+  let t;
+  svg.addEventListener('pointerdown', e => { clearTimeout(t); show(e); });
+  svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) show(e); });
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') reset(); });
+  svg.addEventListener('pointercancel', () => { clearTimeout(t); t = setTimeout(reset, 2200); });
+  svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') { clearTimeout(t); t = setTimeout(reset, 2200); } });
 }
 
 function barChart(box, bars, readout, showMarket) {
@@ -900,9 +975,7 @@ function barChart(box, bars, readout, showMarket) {
     readout.innerHTML = `${esc(b.label)}: ` + (!b.v ? '<b>no data yet</b>' : `saved <b class="${cls(b.v.saved)}">${signed(b.v.saved)}</b>${showMarket ? `, market <b class="${cls(b.v.market)}">${signed(b.v.market)}</b>` : ''}`);
   };
   const reset = () => { hl.style.display = 'none'; readout.innerHTML = readout.dataset.def; };
-  svg.addEventListener('pointerdown', show); svg.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) show(e); });
-  svg.addEventListener('pointerleave', reset);
-  svg.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(reset, 2200); });
+  chartTouch(svg, show, reset);
 }
 
 const isInv = a => !!a && a.kind === 'investment';
@@ -1008,6 +1081,7 @@ function renderOverview() {
       <p class="big">${last.v < 0 ? '−' : ''}${GBP0.format(Math.abs(whole))}<small>${pence}</small></p>
       <div class="pills">${w ? pill(w.saved, 'saved this week', true) : '<span class="pill">Nothing to compare yet this week</span>'}${m ? pill(m.saved, 'saved in 30 days') : ''}${m && invAll ? pill(m.market, 'market in 30 days') : ''}</div>
     </div>
+    ${backupNudge(series)}
     <div class="card">
       <div class="rowhead"><h2>Over time</h2>${segHTML('range', Object.keys(RANGES), ui.range)}</div>
       ${withData.length > 1 ? `<div class="chips" role="group" aria-label="Show">${[{ id: 'all', name: 'All banks' }, ...withData.map(x => x.b)].map(b => `<button data-scope="${b.id}" aria-pressed="${ui.scope === b.id}">${esc(b.name)}</button>`).join('')}</div>` : ''}
@@ -1024,12 +1098,21 @@ function renderOverview() {
     <div class="section-h"><h2>Your banks</h2><span>Tap a card to open</span></div>
     <div class="wallet" style="height:${(order.length - 1) * STEP + CARD}px">${cards}</div>`;
   wireHeader(el);
+  const bk = $('[data-backup]', el); if (bk) bk.onclick = exportBackup;
   $$('[data-range]', el).forEach(b => b.onclick = () => { ui.range = b.dataset.range; renderOverview(); });
   $$('[data-period]', el).forEach(b => b.onclick = () => { ui.period = b.dataset.period; renderOverview(); });
   $$('[data-scope]', el).forEach(b => b.onclick = () => { ui.scope = b.dataset.scope; renderOverview(); });
-  $$('[data-bank]', el).forEach(b => b.onclick = () => { ui.bank = b.dataset.bank; renderOverview(); window.scrollTo(0, 0); });
+  $$('[data-bank]', el).forEach(b => b.onclick = () => { ui.bank = b.dataset.bank; renderOverview(); window.scrollTo(0, 0); Nav.sync(); });
   lineChart($('#o-chart'), pts, $('#o-read'));
   barChart($('#o-bars'), periodBars(scoped, ui.period, scopeFilter), $('#o-bread'), invScope);
+}
+// On the phone, data lives only in this browser: remind about backups two weeks after starting,
+// then 30 days after each backup. Not shown for demo data or in the Claude-hosted copy.
+function backupNudge(series) {
+  if (Store.mode !== 'local' || demoImports().length || !series.length) return '';
+  const lb = S.meta.lastBackup, age = dayDiff(lb || S.meta.since || today(), today());
+  if (age < (lb ? 30 : 14)) return '';
+  return `<div class="card nudge"><div><b>Time for a backup</b><p>${lb ? `Last one was ${age} days ago.` : 'You haven’t made one yet.'} Your balances are only on this phone.</p></div><button class="btn small" data-backup>Back up</button></div>`;
 }
 function headerHTML() {
   return `<header class="topbar"><div><h1>Hej${S.meta.name ? ' ' + esc(S.meta.name) : ''}</h1><div class="sync" id="sync"><i></i><span></span></div></div>
@@ -1071,7 +1154,7 @@ function renderBank(el) {
     ${has ? `<div class="card"><div class="rowhead"><h2>${esc(b.name)} over time</h2>${segHTML('brange', ['1M', '3M', '1Y', 'All'], ui.bankRange)}</div>
       <div class="readout" id="b-read">Latest: <b>${GBP.format(last.v)}</b> on ${fmtDate(last.date)}</div><div class="chartbox" id="b-chart"></div></div>` : ''}
     <div class="duo"><button class="btn" data-bimport>Import statement</button><button class="btn light" data-btype>Type a balance</button></div>`;
-  $('[data-back]', el).onclick = () => { ui.bank = null; renderOverview(); };
+  $('[data-back]', el).onclick = () => { ui.bank = null; renderOverview(); window.scrollTo(0, 0); Nav.sync(); };
   $$('[data-brange]', el).forEach(x => x.onclick = () => { ui.bankRange = x.dataset.brange; renderOverview(); });
   $('[data-bimport]', el).onclick = () => { ui.prefAcct = as[0]?.id; go('update'); $('#file').click(); };
   $('[data-btype]', el).onclick = () => { go('update'); const i = $(`#m-${as[0]?.id}`); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } };
@@ -1090,6 +1173,7 @@ function moneyHTML(id, cur, attrs, placeholderVal) {
 function moneyInput(inp, cur) {
   const st = { d: '', neg: false };
   const box = inp.closest('.money'), pm = box && $('.pm', box);
+  inp.classList.add('cm');
   const caretEnd = () => { if (document.activeElement !== inp) return; const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} };
   const render = () => {
     const cents = st.d ? +st.d : 0;
@@ -1380,12 +1464,12 @@ function renderHistory() {
   sel.innerHTML = acctOptions(cur);
   const a = acctById(cur);
   const es = a ? entries(a.id).reverse() : [];
-  $('#h-list').innerHTML = es.length ? es.slice(0, 400).map(([d, e]) => `<div class="hist-row"><span class="d">${fmtDate(d, true)}<small><span class="badge ${e.src}">${e.src === 'manual' ? 'Typed' : e.src.toUpperCase()}</span></small></span>
+  $('#h-list').innerHTML = es.length ? es.slice(0, 400).map(([d, e]) => `<div class="hist-row"><span class="d">${fmtDate(d, true)}<small><span class="badge ${esc(e.src)}">${e.src === 'manual' ? 'Typed' : esc(String(e.src).toUpperCase())}</span></small></span>
     <b>${money(e.b, a.cur)}</b><button class="iconbtn" data-del="${d}" aria-label="Delete balance for ${fmtDate(d, true)}">${TRASH}</button></div>`).join('')
     : `<p class="muted" style="margin:12px 0 4px">No balances for this account yet.</p>`;
   $$('[data-del]', $('#h-list')).forEach(b => b.onclick = () => confirmTap(b, 'Delete', () => { delete S.bal[a.id][b.dataset.del]; saveBal(a.id); renderHistory(); }));
   const ims = S.meta.imports;
-  $('#h-imports').innerHTML = ims.length ? ims.slice(0, 40).map(i => `<div class="hist-row"><span class="d">${esc(i.id.startsWith('demo-') ? i.file : fullName(acctById(i.acct)))}<small>${fmtDate(i.from)} to ${fmtDate(i.to)}${i.tx ? `, ${i.tx} transactions` : ''}${i.kind !== 'manual' ? ', ' + i.kind.toUpperCase() : ''}</small></span><span></span>
+  $('#h-imports').innerHTML = ims.length ? ims.slice(0, 40).map(i => `<div class="hist-row"><span class="d">${esc(i.id.startsWith('demo-') ? i.file : fullName(acctById(i.acct)))}<small>${fmtDate(i.from)} to ${fmtDate(i.to)}${i.tx ? `, ${i.tx} transactions` : ''}${i.kind !== 'manual' ? ', ' + esc(String(i.kind).toUpperCase()) : ''}</small></span><span></span>
     <button class="btn ghost small" data-undo="${i.id}">Undo</button></div>`).join('') : `<p class="muted" style="margin:0">Nothing imported yet.</p>`;
   const trs = trList().reverse();
   const nm = id => id ? esc(fullName(acctById(id))) : 'Outside the app';
@@ -1418,8 +1502,13 @@ function renderSettings() {
       <div class="swatches" role="group" aria-label="Card colour for ${esc(b.name)}">${PALETTE.map(c => `<button data-color="${c}" data-cbank="${b.id}" aria-pressed="${b.color === c}" aria-label="Colour ${c}" style="background:${c}"></button>`).join('')}</div>
       <button class="linkbtn" data-addacct="${b.id}">Add an account to ${esc(b.name)}</button></div>`;
   }).join('');
-  $$('[data-bname]').forEach(i => i.onchange = () => { const b = bankById(i.dataset.bname); b.name = i.value.trim() || b.name; saveMeta(); renderSettings(); toast('Saved'); });
-  $$('[data-name]').forEach(i => i.onchange = () => { const a = acctById(i.dataset.name); a.name = i.value.trim() || a.name; saveMeta(); toast('Saved'); });
+  // Renames update in place (no redraw), so tapping straight into the next box keeps the keyboard there.
+  $$('[data-bname]').forEach(i => i.onchange = () => {
+    const b = bankById(i.dataset.bname); b.name = i.value.trim() || b.name; i.value = b.name; saveMeta();
+    const add = $(`[data-addacct="${b.id}"]`); if (add) add.textContent = `Add an account to ${b.name}`;
+    toast('Saved');
+  });
+  $$('[data-name]').forEach(i => i.onchange = () => { const a = acctById(i.dataset.name); a.name = i.value.trim() || a.name; i.value = a.name; saveMeta(); toast('Saved'); });
   $$('[data-cur]').forEach(s => s.onchange = () => { const a = acctById(s.dataset.cur); a.cur = s.value; Object.values(S.bal[a.id] || {}).forEach(e => { if (a.cur !== 'GBP' && !e.fx) e.fx = S.meta.dkkRate; }); saveMeta(); saveBal(a.id); toast('Saved'); });
   $$('[data-kind]').forEach(s => s.onchange = () => { acctById(s.dataset.kind).kind = s.value; saveMeta(); toast('Saved'); });
   $$('[data-rm]').forEach(b => b.onclick = () => {
@@ -1440,6 +1529,7 @@ function renderSettings() {
     S.meta.accounts.push({ id, bank: btn.dataset.addacct, name: 'New account', cur: 'GBP', kind: 'bank' });
     saveMeta(); renderSettings(); $(`[data-name="${id}"]`).select();
   });
+  $('#s-last').textContent = S.meta.lastBackup ? `Last backup: ${fmtDate(S.meta.lastBackup, true)}` : (hasAny() ? 'No backup yet' : '');
   const demo = $('#s-demo');
   demo.hidden = !demoImports().length;
   const nm = $('#s-name'); if (document.activeElement !== nm) nm.value = S.meta.name || '';
@@ -1447,7 +1537,6 @@ function renderSettings() {
   const auto = CAN_FETCH_RATE && S.meta.rateAuto;
   $('#s-auto-wrap').hidden = !CAN_FETCH_RATE;
   $('#s-auto').checked = auto;
-  r.readOnly = auto;
   $('#s-rate-meta').textContent = (auto
     ? `European Central Bank rate from ${fmtDate(S.meta.rateDate, true)}, checked once a day.`
     : `Set ${fmtDate(S.meta.rateDate, true)}. Update it now and then from your bank app.`) + ` 1 GBP ≈ ${(1 / S.meta.dkkRate).toFixed(2)} DKK.`;
@@ -1473,18 +1562,21 @@ $('#s-rate').addEventListener('change', e => {
   if (!(v > 0 && v < 10)) { toast('Enter the rate as pounds per krone, e.g. 0.1147'); return; }
   S.meta.dkkRate = v; S.meta.rateDate = today(); S.meta.rateAuto = false; saveMeta(); renderSettings(); toast('Rate updated');
 });
-$('#s-export').addEventListener('click', async () => {
-  const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: S.meta, bal: S.bal, tx: S.tx, tr: S.tr }, null, 1);
+async function exportBackup() {
+  const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: { ...S.meta, lastBackup: today() }, bal: S.bal, tx: S.tx, tr: S.tr }, null, 1);
   const filename = `savings-tracker-backup-${today()}.json`;
   try {
     const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
-    if (dl) { await dl.save({ filename, data }); return; }
+    if (dl) { await dl.save({ filename, data }); backedUp(); return; }
   } catch (e) { if (e && (e.code === 'cancelled' || e.code === 'declined')) return; }
   const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
   const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  backedUp();
   toast('Backup saved to Downloads');
-});
+}
+function backedUp() { S.meta.lastBackup = today(); saveMeta(); render(); }
+$('#s-export').addEventListener('click', exportBackup);
 $('#s-restore-file').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
