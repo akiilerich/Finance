@@ -19,7 +19,7 @@
 :root{
   --bg:#E7ECFA; --surface:#FFFFFF; --sunk:#EEF1FB; --ink:#1D1B2E; --muted:#55536B; --line:#E1E5F2; --line2:#D2D8EB;
   --accent:#9BE3B0; --on-accent:#1D1B2E; --shrank:#F2A391; --market:#4FB57A; --lost:#F8CFC4; --down:#B23E26; --down-soft:rgba(226,104,77,.16);
-  --brass:#9A6510; --brass-soft:rgba(232,178,58,.22); --on-ink:#FFFFFF; --card-edge:transparent;
+  --brass:#9A6510; --brass-soft:rgba(232,178,58,.22); --on-ink:#FFFFFF; --card-edge:transparent; --up:#23784A; --up-soft:rgba(79,181,122,.18);
   --radius-lg:26px; --radius:18px; --radius-sm:14px;
   --font:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
@@ -28,13 +28,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
-    --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+    --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16); --up:#9BE3B0; --up-soft:rgba(155,227,176,.14);
     --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#121124; --surface:#1C1B31; --sunk:#26253D; --ink:#EEEDFA; --muted:#AEACC6; --line:#2C2B45; --line2:#3A3957;
-  --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16);
+  --shrank:#B9614F; --lost:#7A4740; --market:#9BE3B0; --down:#F2A391; --down-soft:rgba(242,163,145,.16); --brass:#E8B23A; --brass-soft:rgba(232,178,58,.16); --up:#9BE3B0; --up-soft:rgba(155,227,176,.14);
   --on-ink:#121124; --card-edge:rgba(255,255,255,.10); color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -44,6 +44,7 @@ button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;border-radius:10px}
 .wrap{max-width:560px;margin:0 auto;padding:10px 14px 112px}
+[hidden]{display:none!important}
 .view{display:none} .view.on{display:block}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 6px 14px}
 .topbar h1{font-size:1.32rem;font-weight:800;margin:0;letter-spacing:-.02em}
@@ -105,9 +106,6 @@ button{cursor:pointer}
 .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .stale{color:var(--brass)!important}
 
-.paidin{margin-top:4px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--sunk)}
-.paidin label{display:flex;justify-content:space-between;font-size:.84rem;font-weight:700;margin-bottom:6px}
-.paidin .money{background:var(--surface)}
 .trans{margin-top:14px;padding:12px;border-radius:var(--radius);background:var(--sunk)}
 .trans h3{margin:0 0 2px;font-size:.95rem;font-weight:800}
 .tick{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line2)}
@@ -119,15 +117,61 @@ button{cursor:pointer}
 .nudge b{display:block;font-size:.98rem}
 .nudge p{margin:2px 0 0;font-size:.84rem;color:var(--ink);opacity:.8}
 .nudge .btn{flex:none}
+/* Update: account list and keypad */
+.datechip{position:relative;display:inline-flex;align-items:center;gap:6px;background:var(--surface);border-radius:999px;padding:0 12px 0 14px;min-height:44px;font-weight:700;font-size:.9rem;cursor:pointer}
+.datechip svg{width:16px;height:16px;color:var(--muted)}
+.datechip input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer}
+.datechip:focus-within{outline:2.5px solid var(--ink);outline-offset:2px}
+.datechip.past{background:var(--brass-soft)}
+.ulabel{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:6px 6px 8px;font-size:.78rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.ulabel span{text-transform:none;letter-spacing:0;font-weight:600;text-align:right}
+.card.rows{padding:4px 16px}
+.tile{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:800;font-size:1.05rem;box-shadow:inset 0 0 0 1px var(--card-edge)}
+.arow{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.arow:first-child{border-top:0}
+.arow:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;border-radius:14px}
+.nm{min-width:0}
+.nm b,.rv b{display:block;font-size:1.02rem;font-weight:800;line-height:1.25}
+.nm small,.rv small{display:block;font-size:.8rem;font-weight:600;color:var(--muted)}
+.rv{text-align:right}
+.fresh{color:var(--up)!important}
+.btn.start{display:flex;width:100%;justify-content:space-between;margin:0 0 14px;padding:0 18px 0 20px;text-align:left}
+.btn.start svg{width:20px;height:20px;flex:none}
+.extras{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:4px}
+.pillbtn{position:relative;border:0;background:var(--surface);color:var(--ink);border-radius:999px;min-height:48px;font-weight:700;font-size:.88rem;padding:0 10px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}
+.pillbtn svg{width:17px;height:17px;flex:none;color:var(--muted)}
+.pillbtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.pillbtn:focus-within{outline:2.5px solid var(--ink);outline-offset:2px}
+.kp-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center}
+.kp-head b{display:block;font-size:1.1rem;font-weight:800}
+.kp-head small{display:block;color:var(--muted);font-weight:600;font-size:.84rem}
+.step{font-size:.78rem;font-weight:800;color:var(--muted);background:var(--sunk);border-radius:999px;padding:5px 10px;white-space:nowrap}
+.amount{font-size:clamp(2.4rem,11vw,3rem);font-weight:800;letter-spacing:-.03em;text-align:center;margin:18px 0 4px;line-height:1.1;overflow-wrap:anywhere}
+.amount.empty{color:var(--muted);opacity:.5}
+.amount.neg{color:var(--down)}
+.diff{display:flex;justify-content:center;align-items:center;min-height:34px;text-align:center}
+.diff span{font-size:.86rem;font-weight:700;border-radius:999px;padding:5px 12px;background:var(--sunk);color:var(--muted)}
+.diff span.up{background:var(--up-soft);color:var(--up)}
+.diff span.down{background:var(--down-soft);color:var(--down)}
+.diff span.warn{background:var(--brass-soft);color:var(--brass)}
+.quick{display:flex;justify-content:center;gap:8px;margin:10px 0 12px;min-height:38px}
+.chip{border:1.5px solid var(--line2);background:transparent;border-radius:999px;min-height:38px;padding:0 14px;font-weight:700;font-size:.85rem;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--down-soft);border-color:transparent;color:var(--down)}
+.chip:disabled{opacity:.4;cursor:default}
+.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.keys button{border:0;background:var(--sunk);border-radius:16px;min-height:56px;font-size:1.5rem;font-weight:700;color:var(--ink);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.keys button:active{background:var(--line2)}
+.keys .soft{font-size:1.1rem;color:var(--muted)}
+.keys svg{width:24px;height:24px;vertical-align:middle}
+.kp-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.kp-actions.two{grid-template-columns:minmax(0,1fr) minmax(0,2.2fr)}
+@media (max-height:700px){.amount{margin:8px 0 2px}.quick{margin:6px 0 8px}.keys{gap:6px;margin-bottom:8px}.keys button{min-height:46px}}
 .ver{text-align:center;font-size:.74rem;font-weight:600;color:var(--muted);opacity:.8;margin:18px 0 0}
 /* Forms */
-.grp{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:var(--muted);margin:18px 0 2px}
-.grp i{width:12px;height:12px;border-radius:4px;display:inline-block}
 .field{display:grid;grid-template-columns:1fr;gap:6px;padding:8px 0}
 .field .n{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .field .money input{font-size:1.15rem}
 .field .n{font-weight:700}
-.field .hint{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right}
 .money{display:flex;align-items:center;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:0 10px;min-height:48px}
 .money:focus-within{border-color:var(--ink);background:var(--surface)}
 .money span{color:var(--muted);font-weight:700;margin-right:4px;font-size:.92rem}
@@ -141,24 +185,16 @@ button{cursor:pointer}
 .inp,select.inp{width:100%;background:var(--sunk);border:2px solid transparent;border-radius:var(--radius-sm);padding:10px 12px;min-height:48px;font-size:1rem}
 .inp:focus{border-color:var(--ink);outline:none;background:var(--surface)}
 label.lbl{display:block;font-size:.86rem;color:var(--muted);font-weight:700;margin:12px 0 6px}
-.conv{font-size:.78rem;color:var(--muted);font-weight:600;text-align:right;margin-top:-2px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;padding:13px 20px;font-weight:800;font-size:1rem;min-height:52px;background:var(--ink);color:var(--on-ink)}
 .btn.small{padding:0 18px;min-height:44px;font-size:.92rem;border-radius:999px}
 .btn.full{width:100%}
 .btn.ghost,.btn.light{background:var(--surface);color:var(--ink)}
-.card .btn.ghost{background:var(--sunk)}
+.card .btn.ghost,.sheet .btn.ghost{background:var(--sunk)}
 .btn.danger{background:var(--down-soft);color:var(--down)}
 .btn:disabled{opacity:.45;cursor:default}
 .linkbtn{border:0;background:none;color:var(--ink);font-weight:700;padding:10px 0;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--accent);text-decoration-thickness:2px}
 .actions{display:flex;gap:10px;margin-top:16px}
 .actions .btn{flex:1}
-.drop{display:block;border:2px dashed var(--line2);border-radius:20px;padding:22px 16px;text-align:center;background:var(--sunk);cursor:pointer;position:relative}
-.drop .ic{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--on-accent);margin-bottom:8px}
-.drop .ic svg{width:22px;height:22px}
-.drop b{display:block;font-size:1.02rem;font-weight:800}
-.drop span.t{font-size:.82rem;font-weight:600;color:var(--muted)}
-.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.drop:focus-within{border-color:var(--ink)}
 .note{font-size:.86rem;color:var(--muted);background:var(--sunk);border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0}
 .note.warn{background:var(--brass-soft);color:var(--ink)}
 .note.err{background:var(--down-soft);color:var(--ink)}
@@ -213,6 +249,7 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
 @media (prefers-reduced-motion:reduce){.wcard{transition:none!important}}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:11px 18px;border-radius:999px;font-size:.9rem;font-weight:700;z-index:60;display:none;max-width:90%;text-align:center}
 .toast.on{display:block}
+.toast.top{bottom:auto;top:calc(14px + env(safe-area-inset-top,0px))}
 .muted{color:var(--muted)}
 .page-h{padding:8px 6px 14px}
 .page-h h1{font-size:1.32rem;font-weight:800;margin:0;letter-spacing:-.02em}
@@ -225,29 +262,12 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
 
   <!-- UPDATE -->
   <section class="view" id="v-update" aria-label="Update balances">
-    <div class="page-h"><h1>Update</h1></div>
-    <div class="card">
-      <h2>Import a statement</h2>
-      <p class="sub">CSV or PDF from your banking app. Balances and transactions are read on this phone.</p>
-      <label class="drop" id="drop">
-        <input type="file" id="file" accept=".csv,.pdf,text/csv,application/pdf,text/comma-separated-values">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span>
-        <b>Choose a file</b>
-        <span class="t">Chase, Monzo and most other banks</span>
-      </label>
-    </div>
-    <div class="card">
-      <h2>Type in balances</h2>
-      <p class="sub">Fill in the accounts you've checked. Leave the rest blank.</p>
-      <label class="lbl" for="m-date">Balance date</label>
-      <input class="inp" type="date" id="m-date">
-      <div id="m-fields" style="margin-top:8px"></div>
-      <button class="btn full" id="m-save" style="margin-top:14px">Save balances</button>
-    </div>
-    <div class="card">
-      <h2>Record a transfer</h2>
-      <p class="sub">Money moved into or out of an investment account, like Chase to Trading 212. It counts as saved, not market growth. Transfers in your bank statements are picked up when you import them.</p>
-      <div id="t-form"></div>
+    <header class="topbar"><h1>Update</h1>
+      <label class="datechip" id="u-datechip"><span id="u-date-t">Today</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><input type="date" id="u-date" aria-label="Balance date"></label></header>
+    <div id="u-body"></div>
+    <div class="extras">
+      <label class="pillbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Import a statement<input type="file" id="file" accept=".csv,.pdf,text/csv,application/pdf,text/comma-separated-values"></label>
+      <button class="pillbtn" id="u-transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Record a transfer</button>
     </div>
   </section>
 
@@ -666,7 +686,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
 const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
 const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 document.getElementById('app-ver').textContent = `SVJ v${APP_VERSION}`;
 const DEFAULT_BANKS = [
   { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
@@ -811,7 +831,7 @@ const accountsIn = bid => S.meta.accounts.filter(a => a.bank === bid);
 const accounts = () => banks().flatMap(b => accountsIn(b.id));
 const acctById = id => S.meta.accounts.find(a => a.id === id);
 const fullName = a => { const b = a && bankById(a.bank); return a ? (b ? `${b.name} ${a.name}` : a.name) : 'Removed account'; };
-const acctOptions = (sel) => banks().map(b => { const as = accountsIn(b.id); return as.length ? `<optgroup label="${esc(b.name)}">${as.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}${a.cur !== 'GBP' ? ` (${a.cur})` : ''}</option>`).join('')}</optgroup>` : ''; }).join('');
+const acctOptions = (sel) => accounts().map(a => `<option value="${esc(a.id)}" ${a.id === sel ? 'selected' : ''}>${esc(bankById(a.bank).name)} · ${esc(a.name)}${a.cur !== 'GBP' ? ` (${a.cur})` : ''}</option>`).join('');
 const entries = id => Object.entries(S.bal[id] || {}).sort((a, b) => a[0] < b[0] ? -1 : 1);
 const toGBP = (acct, e) => acct.cur === 'GBP' ? e.b : e.b * (e.fx || S.meta.dkkRate);
 const latest = id => { const es = entries(id); return es.length ? es[es.length - 1] : null; };
@@ -844,18 +864,23 @@ const changeBetween = (series, d0, d1) => { const a = pointOn(series, d0), b = p
 
 // ---------- UI basics ----------
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), Math.max(2800, msg.length * 55)); }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.toggle('top', sheetOpen()); t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), Math.max(2800, msg.length * 55)); }
 const sheetOpen = () => $('#sheet').classList.contains('on');
 let sheetReturn = null;
 function openSheet(html) {
   if (!sheetOpen()) sheetReturn = document.activeElement;
+  $('#toast').classList.add('top'); // a message already showing moves up, off the sheet
   $('#sheet-body').innerHTML = html; $('#sheet').classList.add('on'); $('#sheet-bg').classList.add('on'); $('#sheet').scrollTop = 0;
   const h = $('#sheet-title'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   Nav.sync();
 }
+let kp = null; // the keypad round in progress (see KEYPAD)
 function closeSheet() {
-  const was = sheetOpen();
+  const was = sheetOpen(), round = kp;
+  kp = null;
   $('#sheet').classList.remove('on'); $('#sheet-bg').classList.remove('on'); $('#sheet-body').innerHTML = '';
+  $('#toast').classList.remove('top');
+  if (round && round.saved.length) render();
   if (was && sheetReturn && sheetReturn.isConnected) sheetReturn.focus({ preventScroll: true });
   sheetReturn = null;
   Nav.sync();
@@ -893,6 +918,7 @@ window.addEventListener('popstate', () => {
 let tab = 'overview';
 function go(t) {
   ui.bank = null;
+  if (t !== 'update') ui.updDate = null;
   tab = t;
   $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + t));
   $$('nav.tabs button').forEach(b => b.dataset.tab === t ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
@@ -1025,7 +1051,7 @@ function periodBars(series, mode, filter) {
 }
 
 // ---------- OVERVIEW ----------
-const ui = { range: '3M', period: 'week', scope: 'all', bank: null, bankRange: '3M' };
+const ui = { range: '3M', period: 'week', scope: 'all', bank: null, bankRange: '3M', updDate: null };
 const RANGES = { '1M': 30, '3M': 91, '1Y': 365, 'All': 1e9 };
 const segHTML = (attr, opts, on, labels) => `<div class="seg" role="group">${opts.map((o, i) => `<button data-${attr}="${o}" aria-pressed="${o === on}">${labels ? labels[i] : o}</button>`).join('')}</div>`;
 const pill = (v, lbl, strong) => v == null ? '' : `<span class="pill ${v < 0 ? 'neg' : strong ? 'acc' : ''}">${signed(v)} ${lbl}</span>`;
@@ -1157,7 +1183,7 @@ function renderBank(el) {
   $('[data-back]', el).onclick = () => { ui.bank = null; renderOverview(); window.scrollTo(0, 0); Nav.sync(); };
   $$('[data-brange]', el).forEach(x => x.onclick = () => { ui.bankRange = x.dataset.brange; renderOverview(); });
   $('[data-bimport]', el).onclick = () => { ui.prefAcct = as[0]?.id; go('update'); $('#file').click(); };
-  $('[data-btype]', el).onclick = () => { go('update'); const i = $(`#m-${as[0]?.id}`); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } };
+  $('[data-btype]', el).onclick = () => startKeypad(as.map(a => a.id), 'stay');
   if (has) lineChart($('#b-chart'), pts, $('#b-read'), b.color);
 }
 
@@ -1207,75 +1233,187 @@ function moneyInput(inp, cur) {
   return inp;
 }
 
-// ---------- UPDATE (manual) ----------
-function renderUpdate() {
-  const d = $('#m-date'); if (!d.value) d.value = today(); d.max = today();
-  const box = $('#m-fields');
-  const keep = {}; $$('input[data-acct]', box).forEach(i => keep[i.dataset.acct] = moneyVal(i));
-  box.innerHTML = banks().map(b => { const as = accountsIn(b.id); return as.length ? `<h3 class="grp"><i style="background:${b.color}"></i>${esc(b.name)}</h3>` + as.map(a => {
-    const l = latest(a.id);
-    return `<div class="field"><label for="m-${a.id}" class="n">${esc(a.name)}<span class="hint">${l ? `Last: ${money(l[1].b, a.cur)}, ${fmtDate(l[0])}` : 'No balance yet'}</span></label>
-      ${moneyHTML('m-' + a.id, a.cur, `data-acct="${a.id}" aria-label="${esc(b.name + ' ' + a.name)} balance"`, NaN)}
-      ${a.cur !== 'GBP' ? `<div class="conv" id="c-${a.id}"></div>` : ''}
-      ${isInv(a) ? `<div class="paidin"><label for="pi-${a.id}">Paid in since last time <span class="hint">optional</span></label>${moneyHTML('pi-' + a.id, a.cur, `data-paid="${a.id}"`, NaN)}</div>` : ''}</div>`;
-  }).join('') : ''; }).join('');
-  $$('input[data-acct]', box).forEach(inp => {
-    const a = acctById(inp.dataset.acct);
-    inp.addEventListener('money', () => {
-      const c = $('#c-' + a.id); if (!c) return;
-      const v = moneyVal(inp); c.textContent = isFinite(v) ? '≈ ' + GBP.format(v * S.meta.dkkRate) : '';
-    });
-    moneyInput(inp, a.cur);
-    if (isFinite(keep[a.id])) inp.setMoney(keep[a.id]);
+// ---------- UPDATE ----------
+// The accounts you update most ("your usual") come first, with one button to do them in a row.
+// Picked from the last 60 days: each typed balance and each import counts once. Demo data doesn't count.
+function usualAccounts() {
+  const from = addDays(today(), -60), score = {};
+  accounts().forEach(a => {
+    let n = 0;
+    for (const [d, e] of Object.entries(S.bal[a.id] || {})) if (d >= from && e.src === 'manual' && !String(e.imp || '').startsWith('demo-')) n++;
+    n += S.meta.imports.filter(i => i.acct === a.id && !i.id.startsWith('demo-') && (i.at || '') >= from).length;
+    score[a.id] = n;
   });
-  $$('input[data-paid]', box).forEach(inp => moneyInput(inp, acctById(inp.dataset.paid).cur));
-  renderTransferForm();
+  const top = Math.max(0, ...Object.values(score));
+  return accounts().filter(a => score[a.id] >= 2 && score[a.id] * 2 >= top).sort((a, b) => score[b.id] - score[a.id]).slice(0, 3);
 }
-$('#m-save').addEventListener('click', async () => {
-  const date = $('#m-date').value || today();
-  const changed = [];
-  for (const inp of $$('input[data-acct]')) {
-    const v = moneyVal(inp);
-    if (!isFinite(v)) continue;
-    const a = acctById(inp.dataset.acct);
-    S.bal[a.id] = S.bal[a.id] || {};
-    S.bal[a.id][date] = { b: Math.round(v * 100) / 100, src: 'manual', ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) };
-    changed.push(a.id);
+const tileHTML = b => `<span class="tile" style="background:${b.color};color:${cardInk(b.color)}" aria-hidden="true">${esc((b.name.trim()[0] || '·').toUpperCase())}</span>`;
+const shortAge = d => { const n = dayDiff(d, today()); return n <= 0 ? 'Today' : n === 1 ? 'Yesterday' : `${n} days ago`; };
+const moneyS = (v, cur) => (v < 0 ? '−' : '') + money(Math.abs(v), cur);
+const andList = xs => xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join('');
+function acctRow(a) {
+  const b = bankById(a.bank), l = latest(a.id), age = l ? dayDiff(l[0], today()) : null;
+  return `<button class="arow" data-kp="${esc(a.id)}">${tileHTML(b)}<span class="nm"><b>${esc(b.name)}</b><small>${esc(a.name)}</small></span>
+    <span class="rv"><b>${l ? moneyS(l[1].b, a.cur) : '—'}</b><small class="${age === null ? '' : age <= 0 ? 'fresh' : age > 8 ? 'stale' : ''}">${l ? shortAge(l[0]) : 'No balance yet'}</small></span></button>`;
+}
+// The balance date is today unless you pick another day. It goes back to today when you leave this tab.
+const updDate = () => ui.updDate || today();
+function renderDateChip() {
+  const inp = $('#u-date'), d = updDate();
+  inp.max = today(); if (document.activeElement !== inp) inp.value = d;
+  $('#u-date-t').textContent = d === today() ? 'Today' : d === addDays(today(), -1) ? 'Yesterday' : `${dowShort(d)} ${fmtDate(d)}`;
+  $('#u-datechip').classList.toggle('past', d !== today());
+}
+$('#u-date').addEventListener('change', e => { const v = e.target.value; ui.updDate = v && v < today() ? v : null; renderDateChip(); });
+$('#u-date').addEventListener('click', e => { if (matchMedia('(pointer: fine)').matches) try { e.target.showPicker(); } catch (err) {} });
+function renderUpdate() {
+  renderDateChip();
+  const usual = usualAccounts(), rest = accounts().filter(a => !usual.includes(a));
+  const names = usual.map(a => usual.some(x => x !== a && x.bank === a.bank) ? fullName(a) : bankById(a.bank).name);
+  const list = xs => `<div class="card rows">${xs.map(acctRow).join('')}</div>`;
+  const body = $('#u-body');
+  body.innerHTML = !accounts().length ? '<div class="card"><p class="muted" style="margin:0">Add a bank and an account in Settings first.</p></div>'
+    : (usual.length ? `<button class="btn start" data-kp-usual><span>Update ${esc(andList(names))}</span>${ARROW}</button>
+        <div class="ulabel">Your usual <span>picked from what you update most</span></div>${list(usual)}` : '')
+      + (rest.length ? `<div class="ulabel">${usual.length ? 'Everything else' : 'Your accounts <span>the ones you update most move to the top</span>'}</div>${list(rest)}` : '');
+  $$('[data-kp]', body).forEach(r => r.onclick = () => startKeypad([r.dataset.kp], 'stay'));
+  const st = $('[data-kp-usual]', body); if (st) st.onclick = () => startKeypad(usual.map(a => a.id), 'overview');
+  $('#u-transfer').hidden = !accounts().some(isInv);
+}
+$('#u-transfer').addEventListener('click', () => openTransfer());
+
+// ---------- KEYPAD ----------
+// A number pad built into the app, so the phone keyboard never covers the screen. Digits fill in from
+// the right like a card machine (5 → £0.05, 557 → £5.57). Several accounts can be done in one round.
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const BACKSPACE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/></svg>';
+// after: 'overview' finishes the round on the Overview; 'stay' stays where you are.
+function startKeypad(ids, after) {
+  ids = ids.filter(id => acctById(id));
+  if (!ids.length) return;
+  kp = { queue: ids, i: 0, d: '', neg: false, mode: 'bal', saved: [], after, date: updDate(), since: null };
+  drawKeypad();
+}
+const kpAcct = () => acctById(kp.queue[kp.i]);
+const kpVal = () => kp.d ? (kp.neg ? -1 : 1) * Number(kp.d) / 100 : NaN;
+const kpPrev = a => entries(a.id).filter(([d]) => d <= kp.date).pop(); // the balance to compare with
+function drawKeypad() {
+  const a = kpAcct(), b = bankById(a.bank), paid = kp.mode === 'paid', multi = kp.queue.length > 1, two = multi || paid;
+  const sub = paid ? `Paid in since ${kp.since ? fmtDate(kp.since) : 'last time'}?` : esc(a.name) + (kp.date !== today() ? `, ${fmtDate(kp.date)}` : '');
+  const chips = paid ? ['<button type="button" class="chip" id="kp-neg" aria-pressed="false">± Taken out</button>']
+    : [isInv(a) ? '' : '<button type="button" class="chip" id="kp-neg" aria-pressed="false">± Overdrawn</button>', `<button type="button" class="chip" id="kp-same"${kpPrev(a) ? '' : ' disabled'}>No change</button>`];
+  const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button type="button" data-k="${n}">${n}</button>`).join('')
+    + `<button type="button" class="soft" data-k="00">00</button><button type="button" data-k="0">0</button><button type="button" class="soft" data-k="del" aria-label="Delete last digit">${BACKSPACE}</button>`;
+  openSheet(`<div class="kp-head">${tileHTML(b)}<div><b id="sheet-title">${esc(b.name)}</b><small>${sub}</small></div>${multi ? `<span class="step">${kp.i + 1} of ${kp.queue.length}</span>` : '<span></span>'}<button type="button" class="iconbtn" data-kp-close aria-label="Close">${CLOSE}</button></div>
+    <div class="amount empty" id="kp-amt" aria-live="polite"></div>
+    <div class="diff"><span id="kp-diff"></span></div>
+    <div class="quick">${chips.join('')}</div>
+    <div class="keys">${keys}</div>
+    <div class="kp-actions${two ? ' two' : ''}">${two ? '<button type="button" class="btn ghost" id="kp-skip">Skip</button>' : ''}<button type="button" class="btn" id="kp-save">Save</button></div>`);
+  const sh = $('#sheet-body');
+  $$('[data-k]', sh).forEach(k => k.onclick = () => press(k.dataset.k));
+  $('[data-kp-close]', sh).onclick = closeSheet;
+  const neg = $('#kp-neg'); if (neg) neg.onclick = () => { kp.neg = !kp.neg; updateKeypad(); };
+  const same = $('#kp-same'); if (same) same.onclick = () => { const p = kpPrev(a); if (!p) return; kp.neg = p[1].b < 0; kp.d = String(Math.round(Math.abs(p[1].b) * 100)); updateKeypad(); };
+  const skip = $('#kp-skip'); if (skip) skip.onclick = nextKeypad;
+  $('#kp-save').onclick = saveKeypad;
+  updateKeypad();
+}
+function updateKeypad() {
+  if (!kp) return;
+  const a = kpAcct(), v = kpVal(), paid = kp.mode === 'paid', amt = $('#kp-amt');
+  amt.textContent = moneyS(isFinite(v) ? v : 0, a.cur);
+  amt.classList.toggle('empty', !isFinite(v)); amt.classList.toggle('neg', v < 0);
+  const c = paid ? { t: !isFinite(v) ? `Money you moved into ${bankById(a.bank).name}` : v < 0 ? 'Counts as money taken out, not a market loss' : 'Counts as saved, not market growth', cls: '' } : balanceChange(a, v);
+  const dd = $('#kp-diff'); dd.textContent = c.t; dd.className = c.cls;
+  const neg = $('#kp-neg'); if (neg) neg.setAttribute('aria-pressed', kp.neg);
+  const next = acctById(kp.queue[kp.i + 1]), save = $('#kp-save');
+  save.disabled = !isFinite(v);
+  save.textContent = next && (paid || !isInv(a)) ? `Save and go to ${next.bank === a.bank ? next.name : bankById(next.bank).name}` : 'Save';
+}
+// How the typed balance compares with the last one. A fivefold jump or drop is usually a slipped digit.
+function balanceChange(a, v) {
+  const prev = kpPrev(a);
+  const dkk = a.cur !== 'GBP' && isFinite(v) ? ` (≈ ${GBP.format(v * S.meta.dkkRate)})` : '';
+  if (!isFinite(v)) return { t: prev ? `Last time ${moneyS(prev[1].b, a.cur)}, ${fmtDate(prev[0])}` : 'First balance for this account', cls: '' };
+  if (!prev) return { t: 'First balance for this account' + dkk, cls: '' };
+  const last = prev[1].b, d = Math.round((v - last) * 100) / 100;
+  if (!d) return { t: 'Same as last time' + dkk, cls: '' };
+  const amt = (d > 0 ? '+' : '−') + money(Math.abs(d), a.cur);
+  if (Math.abs(d) >= 100 && last && (Math.abs(v) >= Math.abs(last) * 5 || Math.abs(v) <= Math.abs(last) / 5)) return { t: `${amt}. Big change, check the number`, cls: 'warn' };
+  const n = dayDiff(prev[0], kp.date);
+  const when = n <= 0 ? (kp.date === today() ? 'earlier today' : 'earlier that day') : n === 1 ? 'yesterday' : n < 7 ? dowShort(prev[0]) : fmtDate(prev[0]);
+  return { t: `${amt} since ${when}${dkk}`, cls: d > 0 ? 'up' : 'down' };
+}
+function press(k) {
+  if (!kp) return;
+  kp.d = k === 'del' ? kp.d.slice(0, -1) : (kp.d + k).replace(/^0+(?=\d)/, '').slice(0, 11);
+  updateKeypad();
+}
+function saveKeypad() {
+  if (!kp) return;
+  const a = kpAcct(), v = kpVal();
+  if (!isFinite(v)) return;
+  if (kp.mode === 'paid') {
+    if (v) {
+      const gbp = Math.round(Math.abs(a.cur === 'GBP' ? v : v * S.meta.dkkRate) * 100) / 100;
+      S.tr['p' + rid()] = v > 0 ? { d: kp.date, from: null, to: a.id, a: gbp, src: 'paidin' } : { d: kp.date, from: a.id, to: null, a: gbp, src: 'paidin' };
+      saveTr(); toast(`${GBP.format(gbp)} ${v > 0 ? 'paid in' : 'taken out'}, saved`);
+    }
+    nextKeypad(); return;
   }
-  let paidN = 0;
-  for (const inp of $$('input[data-paid]')) {
-    const v = moneyVal(inp); if (!isFinite(v) || !v) continue;
-    const a = acctById(inp.dataset.paid), gbp = Math.round(Math.abs(a.cur === 'GBP' ? v : v * S.meta.dkkRate) * 100) / 100;
-    S.tr['p' + rid()] = v > 0 ? { d: date, from: null, to: a.id, a: gbp, src: 'paidin' } : { d: date, from: a.id, to: null, a: gbp, src: 'paidin' };
-    paidN++; inp.setMoney(NaN);
-  }
-  if (paidN) saveTr();
-  if (!changed.length) { if (paidN) { toast('Payment recorded'); go('overview'); } else toast('Enter at least one balance'); return; }
-  changed.forEach(saveBal);
-  $$('input[data-acct]').forEach(i => i.setMoney(NaN));
-  toast(`Saved ${changed.length} balance${changed.length === 1 ? '' : 's'} for ${fmtDate(date)}`);
-  go('overview');
+  const before = entries(a.id).filter(([d]) => d < kp.date).pop();
+  kp.since = before ? before[0] : null;
+  const b = Math.round(v * 100) / 100;
+  S.bal[a.id] = S.bal[a.id] || {};
+  S.bal[a.id][kp.date] = { b, src: 'manual', ...(a.cur !== 'GBP' ? { fx: S.meta.dkkRate } : {}) };
+  saveBal(a.id);
+  kp.saved.push(a.id);
+  toast(`Saved ${accountsIn(a.bank).length > 1 ? fullName(a) : bankById(a.bank).name}: ${moneyS(b, a.cur)}`);
+  if (isInv(a)) { kp.mode = 'paid'; kp.d = ''; kp.neg = false; drawKeypad(); return; }
+  nextKeypad();
+}
+function nextKeypad() {
+  if (!kp) return;
+  kp.i++; kp.mode = 'bal'; kp.d = ''; kp.neg = false;
+  if (kp.i < kp.queue.length) { drawKeypad(); return; }
+  const { saved, after } = kp;
+  closeSheet(); // redraws the screen when something was saved
+  if (saved.length > 1) toast(`Saved ${saved.length} balances`);
+  if (after === 'overview' && saved.length) go('overview');
+}
+// On a computer the number keys, Backspace, Enter and minus work too.
+document.addEventListener('keydown', e => {
+  if (!kp || !sheetOpen() || e.altKey || e.ctrlKey || e.metaKey || e.target.matches('input, select, textarea')) return;
+  if (/^[0-9]$/.test(e.key)) press(e.key);
+  else if (e.key === 'Backspace') press('del');
+  else if (e.key === 'Enter' && !e.target.closest('button')) saveKeypad();
+  else if (e.key === '-' && $('#kp-neg')) { kp.neg = !kp.neg; updateKeypad(); }
+  else return;
+  e.preventDefault();
 });
 
-// ---------- TRANSFERS (manual) ----------
-function renderTransferForm() {
-  const box = $('#t-form'); if (!box) return;
-  const opts = sel => `<option value="">Outside the app</option>` + acctOptions(sel);
-  const firstCash = accounts().find(a => !isInv(a)), firstInv = accounts().find(isInv);
-  const keep = { from: $('#t-from')?.value ?? firstCash?.id ?? '', to: $('#t-to')?.value ?? firstInv?.id ?? '', amt: moneyVal($('#t-amt')), date: $('#t-date')?.value || today() };
-  box.innerHTML = `<label class="lbl" for="t-from">From</label><select class="inp" id="t-from">${opts(keep.from)}</select>
-    <label class="lbl" for="t-to">To</label><select class="inp" id="t-to">${opts(keep.to)}</select>
+// ---------- TRANSFERS ----------
+function openTransfer() {
+  const opts = sel => '<option value="">Outside the app</option>' + acctOptions(sel);
+  const cash = accounts().find(a => !isInv(a)), inv = accounts().find(isInv);
+  openSheet(`<h2 id="sheet-title">Record a transfer</h2>
+    <p class="muted" style="margin:0 0 4px;font-size:.9rem">Money moved into or out of an investment, like Chase to Trading 212. It counts as saved, not market growth. Transfers in your bank statements are picked up when you import them.</p>
+    <label class="lbl" for="t-from">From</label><select class="inp" id="t-from">${opts(cash?.id)}</select>
+    <label class="lbl" for="t-to">To</label><select class="inp" id="t-to">${opts(inv?.id)}</select>
     <label class="lbl" for="t-amt">Amount</label>${moneyHTML('t-amt', 'GBP', '', NaN)}
-    <label class="lbl" for="t-date">Date</label><input class="inp" type="date" id="t-date" value="${keep.date}" max="${today()}">
-    <button class="btn full" id="t-save" style="margin-top:14px">Save transfer</button>`;
-  moneyInput($('#t-amt'), 'GBP'); if (isFinite(keep.amt)) $('#t-amt').setMoney(keep.amt);
+    <label class="lbl" for="t-date">Date</label><input class="inp" type="date" id="t-date" value="${updDate()}" max="${today()}">
+    <div class="actions"><button class="btn ghost" id="t-cancel">Cancel</button><button class="btn" id="t-save">Save transfer</button></div>`);
+  moneyInput($('#t-amt'), 'GBP');
+  $('#t-cancel').onclick = closeSheet;
   $('#t-save').onclick = () => {
     const from = $('#t-from').value || null, to = $('#t-to').value || null, v = moneyVal($('#t-amt')), d = $('#t-date').value || today();
-    if (!(v > 0)) { toast('Enter the amount you moved'); return; }
+    if (!(v > 0)) { toast('Type the amount you moved'); return; }
     if (from === to) { toast('Pick two different accounts'); return; }
     if (!isInv(acctById(from)) && !isInv(acctById(to))) { toast('One side needs to be an investment account'); return; }
     S.tr['m' + rid()] = { d, from, to, a: Math.round(v * 100) / 100, src: 'manual' };
-    saveTr(); $('#t-amt').setMoney(NaN); toast('Transfer saved');
+    saveTr(); closeSheet(); toast('Transfer saved');
   };
 }
 

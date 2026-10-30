@@ -10,6 +10,7 @@ Phone-first PWA served by GitHub Pages from the root of `main` (akiilerich.githu
 
 ## Data
 - All state is `S = { meta, bal, tx, tr }`, kept in `localStorage` under `savings-tracker-cache-v1`. There is no server.
+- The Update page lists accounts with "your usual" first: accounts with at least two typed balances or imports in the last 60 days (computed, not stored). Balances are typed on a built-in keypad sheet (`startKeypad`), one account after another.
 - Account and bank ids never change. `migrate(st)` runs on every load and restore: when adding a field, fill it in there and set `st._dirty`.
 - The Claude-hosted copy (where `window.claude` exists) stores the same parts in the artifact database (`Store` in cloud mode). It can't fetch exchange rates, and the back-button handling is off there.
 
@@ -21,4 +22,4 @@ Phone-first PWA served by GitHub Pages from the root of `main` (akiilerich.githu
 - The owner isn't a developer. Explain changes in plain words. Plan bigger changes first and get approval.
 
 ## Testing
-Serve the folder (`python3 -m http.server`) and drive it with Playwright at 390×844. Cover typing balances (2000000 → 20,000.00), importing Chase and Monzo CSVs, the transfer spotted in an import, undoing an import, backup and restore, and the back button.
+Serve the folder (`python3 -m http.server`) and drive it with Playwright at 390×844. Cover the keypad (2000000 → £20,000.00, ⌫ → £2,000.00), the "Update …" round and the stray-digit warning, card-machine typing in the transfer amount (2000000 → 20,000.00), importing Chase and Monzo CSVs, the transfer spotted in an import, undoing an import, backup and restore, and the back button.
