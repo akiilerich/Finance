@@ -113,6 +113,7 @@ button{cursor:pointer}
 .tick span{font-weight:700;font-size:.9rem}.tick small{display:block;font-weight:600;color:var(--muted);font-size:.78rem}
 .acct-ed{grid-template-columns:1fr auto!important}
 .acct-opts{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:8px}
+.beta-tag{display:inline-block;vertical-align:.25em;margin-left:8px;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--on-accent);border-radius:999px;padding:3px 8px}
 .nudge{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--brass-soft)}
 .nudge b{display:block;font-size:.98rem}
 .nudge p{margin:2px 0 0;font-size:.84rem;color:var(--ink);opacity:.8}
@@ -296,6 +297,12 @@ nav.tabs button[aria-current="page"] span.ic{background:var(--accent);color:var(
   <!-- SETTINGS -->
   <section class="view" id="v-settings" aria-label="Settings">
     <div class="page-h"><h1>Settings</h1></div>
+    <div class="card" id="s-beta" hidden>
+      <h2>This is SVJ Beta</h2>
+      <p class="sub">The test copy of SVJ. It has its own data, so nothing you do here changes the main SVJ app.</p>
+      <p class="sub" id="s-beta-meta" style="margin-top:-6px;font-weight:700"></p>
+      <button class="btn ghost small" id="s-beta-copy">Copy data from SVJ</button>
+    </div>
     <div class="card" id="s-demo" hidden>
       <h2>Demo data is loaded</h2>
       <p class="sub">Six months of made-up history for testing. Remove it before you start adding your real balances. Banks and accounts stay as they are.</p>
@@ -680,14 +687,19 @@ const GBP0 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP'
 const DKK = new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' });
 const money = (v, cur = 'GBP') => cur === 'DKK' ? DKK.format(v) : GBP.format(v);
 const signed = (v, whole) => (v > 0 ? '+' : v < 0 ? '−' : '') + (whole ? GBP0 : GBP).format(Math.abs(v));
-const compact = (v, span = Infinity) => { const a = Math.abs(v); const s = v < 0 ? '−' : ''; return a >= 1e6 ? `${s}£${(a / 1e6).toFixed(1)}m` : a >= 1e4 ? `${s}£${span < 6000 ? (a / 1e3).toFixed(1) : Math.round(a / 1e3)}k` : a >= 1e3 ? `${s}£${(a / 1e3).toFixed(1)}k` : `${s}£${Math.round(a)}`; };
+const compact = (v, span = Infinity) => { const a = Math.abs(v); const s = v < 0 ? '−' : ''; if (span < 600 && a < 1e6) return s + GBP0.format(a); return a >= 1e6 ? `${s}£${(a / 1e6).toFixed(1)}m` : a >= 1e4 ? `${s}£${span < 6000 ? (a / 1e3).toFixed(1) : Math.round(a / 1e3)}k` : a >= 1e3 ? `${s}£${(a / 1e3).toFixed(1)}k` : `${s}£${Math.round(a)}`; };
 const rid = () => Math.random().toString(36).slice(2, 9);
 
 const PALETTE = ['#0F7C6E', '#1D1B2E', '#E8B23A', '#D9534F', '#3B3FB6', '#7B4FA0', '#2B7FC4', '#E07A2E'];
 const LIGHT_CARDS = ['#E8B23A', '#E07A2E'];
 const cardInk = c => LIGHT_CARDS.includes(c) ? '#1D1B2E' : '#FFFFFF';
-const APP_VERSION = '2.5.0';
-document.getElementById('app-ver').textContent = `SVJ v${APP_VERSION}`;
+// SVJ Beta is the same file published at akiilerich.github.io/svj-beta, to try new versions before they reach
+// the main app. It keeps its own data on the phone (see SVJ BETA below) and says "Beta" on every screen.
+const BETA = /\/svj-beta(\/|$)/i.test(location.pathname);
+const BETA_TAG = BETA ? '<span class="beta-tag">Beta</span>' : '';
+const APP_VERSION = '2.6.0';
+document.getElementById('app-ver').textContent = `SVJ${BETA ? ' Beta' : ''} v${APP_VERSION}`;
+if (BETA) { document.title = 'SVJ Beta'; $$('#v-update h1, #v-history h1, #v-settings h1').forEach(h => h.insertAdjacentHTML('beforeend', BETA_TAG)); }
 const DEFAULT_BANKS = [
   { id: 'b-chase', name: 'Chase', color: '#0F7C6E' },
   { id: 'b-monzo', name: 'Monzo', color: '#1D1B2E' },
@@ -740,7 +752,8 @@ const DEFAULT_ACCOUNTS_V1 = { chase: 'Chase', monzo: 'Monzo', uk3: 'UK account 3
 let S = fresh();
 
 // ---------- storage ----------
-const CACHE = 'savings-tracker-cache-v1';
+const MAIN_CACHE = 'savings-tracker-cache-v1';
+const CACHE = BETA ? 'svj-beta-cache-v1' : MAIN_CACHE; // both apps share one website, so each keeps its own key
 const Store = {
   mode: 'boot', db: null, uid: null, queues: {}, failed: false, cacheDue: false, cacheWarned: false,
   col() { return this.db.collection('data/users/' + this.uid); },
@@ -812,15 +825,16 @@ const saveBal = a => Store.put('bal-' + a, { entries: S.bal[a] || {} });
 const saveTr = () => Object.keys(S.tr).length ? Store.put('transfers', { items: S.tr }) : Store.del('transfers');
 const saveTx = k => Object.keys(S.tx[k] || {}).length ? Store.put('tx-' + k, { items: S.tx[k] }) : Store.del('tx-' + k);
 
+const storeText = () => Store.mode === 'cloud' ? 'Saved privately to your Claude account, so it’s the same on any device you open this on. Anyone you share this page with can’t see it.'
+  : BETA ? 'Saved in SVJ Beta on this phone, apart from the main SVJ app.'
+  : 'Saved on this phone only. Download a backup now and then, and before you clear Chrome’s data or change phones.';
 function setSync() {
   const el = $('#sync');
-  if (!el) { const st0 = $('#s-store'); if (st0) st0.textContent = Store.mode === 'cloud' ? 'Saved privately to your Claude account, so it’s the same on any device you open this on. Anyone you share this page with can’t see it.' : 'Saved on this phone only. Download a backup now and then, and before you clear Chrome’s data or change phones.'; return; }
+  if (!el) { const st0 = $('#s-store'); if (st0) st0.textContent = storeText(); return; }
   el.className = 'sync ' + (Store.mode === 'cloud' && !Store.failed ? 'ok' : Store.mode === 'boot' ? '' : 'local');
   $('span', el).textContent = Store.mode === 'boot' ? 'Loading' : Store.mode === 'cloud' ? (Store.failed ? 'Sync problem' : 'Synced') : 'This phone only';
   const st = $('#s-store');
-  if (st) st.textContent = Store.mode === 'cloud'
-    ? 'Saved privately to your Claude account, so it’s the same on any device you open this on. Anyone you share this page with can’t see it.'
-    : 'Saved on this phone only. Download a backup now and then, and before you clear Chrome’s data or change phones.';
+  if (st) st.textContent = storeText();
 }
 
 // ---------- model helpers ----------
@@ -949,7 +963,7 @@ function lineChart(box, pts, readout, color) {
   const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
   const grid = [0, .5, 1].map(f => { const v = lo + (hi - lo) * (.12 + f * .76); return `<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="2 4"/><text class="axis" x="2" y="${y(v) - 5}">${compact(v, hi - lo)}</text>`; }).join('');
-  const xl = [0, Math.floor((pts.length - 1) / 2), pts.length - 1].map((i, k) => `<text class="axis" x="${x(i)}" y="${H - 6}" text-anchor="${['start', 'middle', 'end'][k]}">${fmtDate(pts[i].date)}</text>`).join('');
+  const xl = [...new Set([0, Math.floor((pts.length - 1) / 2), pts.length - 1])].map(i => `<text class="axis" x="${x(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}">${fmtDate(pts[i].date)}</text>`).join('');
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net worth over time">${grid}
     <path d="${line}L${x(pts.length - 1)},${H - B}L${x(0)},${H - B}Z" fill="${area}" fill-opacity="${areaOp}"/>
     <path d="${line}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -1069,9 +1083,12 @@ function renderOverview() {
   if (ui.bank && bankById(ui.bank)) return renderBank(el);
   ui.bank = null;
   if (!hasAny()) {
-    el.innerHTML = `${headerHTML()}<div class="card empty"><h2>No balances yet</h2><p>Import a statement or type in today’s balances to start your history.</p>
-      <div class="actions" style="justify-content:center"><button class="btn" data-go="update">Add balances</button></div></div>`;
+    const canCopy = BETA && mainHasData();
+    el.innerHTML = `${headerHTML()}<div class="card empty"><h2>${BETA ? 'Welcome to SVJ Beta' : 'No balances yet'}</h2>
+      <p>${BETA ? 'The test copy of SVJ, with its own data. Start with a copy of your SVJ data, or add balances here.' : 'Import a statement or type in today’s balances to start your history.'}</p>
+      <div style="display:grid;gap:10px;max-width:320px;margin:0 auto">${canCopy ? '<button class="btn" data-copymain>Copy my data from SVJ</button>' : ''}<button class="btn${canCopy ? ' ghost' : ''}" data-go="update">Add balances</button></div></div>`;
     wireHeader(el); $('[data-go]', el).onclick = () => go('update');
+    const cp = $('[data-copymain]', el); if (cp) cp.onclick = copyFromMain;
     return;
   }
   const series = netSeries();
@@ -1133,15 +1150,15 @@ function renderOverview() {
   barChart($('#o-bars'), periodBars(scoped, ui.period, scopeFilter), $('#o-bread'), invScope);
 }
 // On the phone, data lives only in this browser: remind about backups two weeks after starting,
-// then 30 days after each backup. Not shown for demo data or in the Claude-hosted copy.
+// then 30 days after each backup. Not shown for demo data, in SVJ Beta or in the Claude-hosted copy.
 function backupNudge(series) {
-  if (Store.mode !== 'local' || demoImports().length || !series.length) return '';
+  if (BETA || Store.mode !== 'local' || demoImports().length || !series.length) return '';
   const lb = S.meta.lastBackup, age = dayDiff(lb || S.meta.since || today(), today());
   if (age < (lb ? 30 : 14)) return '';
   return `<div class="card nudge"><div><b>Time for a backup</b><p>${lb ? `Last one was ${age} days ago.` : 'You haven’t made one yet.'} Your balances are only on this phone.</p></div><button class="btn small" data-backup>Back up</button></div>`;
 }
 function headerHTML() {
-  return `<header class="topbar"><div><h1>Hej${S.meta.name ? ' ' + esc(S.meta.name) : ''}</h1><div class="sync" id="sync"><i></i><span></span></div></div>
+  return `<header class="topbar"><div><h1>Hej${S.meta.name ? ' ' + esc(S.meta.name) : ''}${BETA_TAG}</h1><div class="sync" id="sync"><i></i><span></span></div></div>
     <button class="btn small" data-hupdate>+ Update</button></header>`;
 }
 function wireHeader(el) { $('[data-hupdate]', el).onclick = () => go('update'); setSync(); }
@@ -1668,6 +1685,11 @@ function renderSettings() {
     saveMeta(); renderSettings(); $(`[data-name="${id}"]`).select();
   });
   $('#s-last').textContent = S.meta.lastBackup ? `Last backup: ${fmtDate(S.meta.lastBackup, true)}` : (hasAny() ? 'No backup yet' : '');
+  $('#s-beta').hidden = !BETA;
+  if (BETA) {
+    $('#s-beta-meta').textContent = S.meta.copiedAt ? `Copied from SVJ on ${fmtDate(S.meta.copiedAt, true)}` : 'Not copied from SVJ yet';
+    $('#s-beta-copy').textContent = S.meta.copiedAt ? 'Copy data from SVJ again' : 'Copy data from SVJ';
+  }
   const demo = $('#s-demo');
   demo.hidden = !demoImports().length;
   const nm = $('#s-name'); if (document.activeElement !== nm) nm.value = S.meta.name || '';
@@ -1702,7 +1724,7 @@ $('#s-rate').addEventListener('change', e => {
 });
 async function exportBackup() {
   const data = JSON.stringify({ app: 'savings-tracker', exported: new Date().toISOString(), meta: { ...S.meta, lastBackup: today() }, bal: S.bal, tx: S.tx, tr: S.tr }, null, 1);
-  const filename = `savings-tracker-backup-${today()}.json`;
+  const filename = `${BETA ? 'svj-beta' : 'savings-tracker'}-backup-${today()}.json`;
   try {
     const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
     if (dl) { await dl.save({ filename, data }); backedUp(); return; }
@@ -1771,6 +1793,24 @@ async function refreshRate(force) {
   } finally { rateBusy = false; }
 }
 window.addEventListener('online', () => refreshRate());
+
+// ---------- SVJ BETA ----------
+// The test copy can take a copy of the main app's data, read straight from this phone. Copying never
+// changes the main app; it replaces what's in the test copy.
+const mainCopy = () => { try { const c = JSON.parse(localStorage.getItem(MAIN_CACHE) || 'null'); return c && c.S && c.S.meta && Array.isArray(c.S.meta.accounts) ? c.S : null; } catch (e) { return null; } };
+const mainHasData = () => { const m = mainCopy(); return !!m && Object.values(m.bal || {}).some(x => Object.keys(x).length); };
+function copyFromMain() {
+  const m = mainCopy();
+  if (!m) { toast('There’s no SVJ data on this phone to copy'); return; }
+  S = migrate(clone(m)); delete S._dirty;
+  S.meta.copiedAt = today();
+  Store.cache(); toast('Copied your data from SVJ'); go('overview');
+}
+$('#s-beta-copy').addEventListener('click', e => {
+  if (!mainCopy()) { toast('There’s no SVJ data on this phone to copy'); return; }
+  if (!hasAny()) { copyFromMain(); return; }
+  confirmTap(e.currentTarget, 'Tap again to replace this copy', copyFromMain);
+});
 
 // ---------- boot ----------
 function render() {

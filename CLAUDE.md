@@ -14,6 +14,13 @@ Phone-first PWA served by GitHub Pages from the root of `main` (akiilerich.githu
 - Account and bank ids never change. `migrate(st)` runs on every load and restore: when adding a field, fill it in there and set `st._dirty`.
 - The Claude-hosted copy (where `window.claude` exists) stores the same parts in the artifact database (`Store` in cloud mode). It can't fetch exchange rates, and the back-button handling is off there.
 
+## SVJ Beta (the test copy)
+- A second app to install next to SVJ for trying changes: repo `akiilerich/svj-beta`, served at akiilerich.github.io/svj-beta. It sits beside /Finance/ on purpose: on Android anything under /Finance/ counts as part of the installed SVJ, so it couldn't be installed separately.
+- It runs the same `index.html` and `sw.js`, copied from the branch being tested. Only its `manifest.webmanifest` (name "SVJ Beta") and icons (mint background, BETA tag) differ. `index.html` detects it from the /svj-beta/ path (`BETA`) and shows a Beta tag on every screen.
+- Both apps share one website, so they share browser storage. The beta keeps its data under `svj-beta-cache-v1` and can copy the main app's `savings-tracker-cache-v1` (read only). Never write the main key from the beta. Service worker caches are named per app (`savings-tracker-v*`, `svj-beta-v*`) and each clears only its own.
+- Workflow: publish experimental work to svj-beta first; when Anders is happy with it, merge the branch into Finance `main`.
+- To test both together, serve a folder holding `Finance/` and `svj-beta/` side by side.
+
 ## Conventions
 - Every change bumps `APP_VERSION`, shown at the bottom of every screen: patch for fixes, minor for features, major for redesigns.
 - Commit summaries start with the version, then a short bulleted list, and name the files changed.

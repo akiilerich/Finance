@@ -1,5 +1,8 @@
 // Offline support: the app shell is cached on install; fonts and the PDF reader are cached the first time they load.
-const VERSION = 'savings-tracker-v4';
+// The same file runs SVJ (akiilerich.github.io/Finance) and SVJ Beta (akiilerich.github.io/svj-beta). They share
+// one website and so one cache store: each names its caches with its own prefix and only clears those.
+const PREFIX = /\/svj-beta\//i.test(self.location.pathname) ? 'svj-beta-v' : 'savings-tracker-v';
+const VERSION = PREFIX + '5';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 // On a weak signal, wait this long for a fresh page before opening the saved copy.
 const PAGE_WAIT = 4000;
@@ -8,7 +11,7 @@ self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
   const req = e.request;
